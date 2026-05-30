@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>NXP 中班飲料訂購</title>
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="飲料訂購" />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet" />
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; background: #0f172a; }
+    body { font-family: 'Noto Sans TC', sans-serif; color: #e2e8f0; }
+    button { cursor: pointer; border: none; outline: none; font-family: inherit; }
+    input { font-family: inherit; }
+    textarea { font-family: inherit; }
+    .card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; backdrop-filter: blur(8px); }
+    .day-chip { width: 34px; height: 34px; border-radius: 50%; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all .15s; border: 2px solid transparent; }
+    .day-chip:active { transform: scale(0.9); }
+    .inp { width: 100%; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 10px 14px; color: #e2e8f0; font-size: 15px; }
+    .inp:focus { outline: none; border-color: #f97316; }
+    button:active { opacity: 0.8; }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useRef } = React;
+const DAYS = ["一","二","三","四","五","六","日"];
+const defaultPeople = [
+  { id: 1, name: "小明", workDays: [0,1,2,3,4] },
+  { id: 2, name: "小美", workDays: [0,1,2,3,4] },
+];
+function randomId() { return Math.random().toString(36).slice(2,9); }
+
+function App() {
+  const [people, setPeople] = useState(() => {
+    try { const s = localStorage.getItem("drink_people"); return s ? JSON.parse(s) : defaultPeople; } catch { return defaultPeople; }
+  });
+  const [rounds, setRounds] = useState(() => {
+    try { const s = localStorage.getItem("drink_rounds"); return s ? JSON.parse(s) : []; } catch { return []; }
+  });
+  const [view, setView] = useState("home");
+  const [activeRound, setActiveRound] = useState(null);
+  const [editPerson, setEditPerson] = useState(null);
+  const [newName, setNewName] = useState("");
+  const [newWorkDays, setNewWorkDays] = useState([0,1,2,3,4]);
+  const [toast, setToast] = useState("");
+  const [showAddPerson, setShowAddPerson] = useState(false);
+  const [imgZoom, setImgZoom] = useState(null);
+  const fileRef = useRef();
+
+  useEffect(() => { localStorage.setItem("drink_people", JSON.stringify(people)); }, [people]);
+  useEffect(() => { localStorage.setItem("drink_rounds", JSON.stringify(rounds)); }, [rounds]);
+
+  function showToast(msg) { setToast(msg); setTimeout(() => setToast(""), 1800); }
+  function todayIdx() { const d = new Date().getDay(); return d === 0 ? 6 : d - 1; }
+
+  function startNewRound() {
+    const today = todayIdx();
+    const present = people.filter(p => p.workDays.includes(today));
+    const round = {
+      id: randomId(),
+      date: new Date().toLocaleDateString("zh-TW"),
+      dayLabel: "週" + DAYS[today],
+      image: null,
+      orders: Object.fromEntries(people.map(p => [p.id, { drink: "", amount: "" }])),
+      payments: Object.fromEntries(people.map(p => [p.id, present.some(x => x.id === p.id) ? "unpaid" : "absent"])),
+    };
+    setActiveRound(round); setView("newRound");
+  }
+
+  function handleImageUpload(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => setActiveRound(r => ({ ...r, image: ev.target.result }));
+    reader.readAsDataURL(file);
+  }
+
+  function updateOrder(personId, field, val) {
+    setActiveRound(r => ({ ...r, orders: { ...r.orders, [personId]: { ...r.orders[personId], [field]: val } } }));
+  }
+
+  function togglePayment(personId) {
+    setActiveRound(r => {
+      const cur = r.payments[personId];
+      if (cur === "absent") return r;
+      return { ...r, payments: { ...r.payments, [personId]: cur === "unpaid" ? "paid" : "unpaid" } };
+    });
+  }
+
+  function toggleAbsent(personId) {
+    setActiveRound(r => {
+      const cur = r.payments[personId];
+      return { ...r, payments: { ...r.payments, [personId]: cur === "absent" ? "unpaid" : "absent" } };
+    });
+  }
+
+  function saveRound() { setRounds(rs => [activeRound, ...rs]); showToast("✅ 已儲存！"); setView("home"); setActiveRound(null); }
+
+  function openRound(round) { setActiveRound(round); setView("roundDetail"); }
+
+  function updateRoundPayment(personId) {
+    setActiveRound(r => {
+      const cur = r.payments[personId];
+      if (cur === "absent") return r;
+      const updated = { ...r, payments: { ...r.payments, [personId]: cur === "unpaid" ? "paid" : "unpaid" } };
+      setRounds(rs => rs.map(x => x.id === updated.id ? updated : x));
+      return updated;
+    });
+  }
+
+  function deleteRound(id) { setRounds(rs => rs.filter(r => r.id !== id)); setView("home"); setActiveRound(null); showToast("🗑️ 已刪除"); }
+
+  function addPerson() {
+    if (!newName.trim()) return;
+    const p = { id: Date.now(), name: newName.trim(), workDays: newWorkDays };
+    setPeople(ps => [...ps, p]); setNewName(""); setNewWorkDays([0,1,2,3,4]); setShowAddPerson(false); showToast("👤 已新增 " + p.name);
+  }
+  function savePerson() { setPeople(ps => ps.map(p => p.id === editPerson.id ? editPerson : p)); setEditPerson(null); showToast("✏️ 已更新"); }
+  function deletePerson(id) { setPeople(ps => ps.filter(p => p.id !== id)); setEditPerson(null); showToast("🗑️ 已刪除"); }
+
+  const unpaidCounts = {};
+  people.forEach(p => { unpaidCounts[p.id] = 0; });
+  rounds.forEach(r => { Object.entries(r.payments).forEach(([pid, status]) => { if (status === "unpaid") unpaidCounts[pid] = (unpaidCounts[pid] || 0) + 1; }); });
+
+  const statusColor = s => s === "paid" ? "#4ade80" : s === "absent" ? "#94a3b8" : "#fb923c";
+  const statusLabel = s => s === "paid" ? "已付" : s === "absent" ? "休假" : "未付";
+  const statusIcon = s => s === "paid" ? "✓" : s === "absent" ? "—" : "!";
+
+  // calc total for a round
+  function roundTotal(round) {
+    if (!round.orders) return 0;
+    return Object.values(round.orders).reduce((sum, o) => sum + (parseFloat(o.amount) || 0), 0);
+  }
+
+  return (
+    <div style={{ minHeight:"100vh", background:"linear-gradient(135deg,#0f172a 0%,#1e293b 50%,#0f172a 100%)", paddingBottom:80 }}>
+
+      {/* Toast */}
+      {toast && <div style={{ position:"fixed", top:20, left:"50%", transform:"translateX(-50%)", background:"#1e293b", border:"1px solid rgba(255,255,255,0.15)", padding:"10px 20px", borderRadius:999, fontSize:14, fontWeight:600, zIndex:999, boxShadow:"0 4px 20px rgba(0,0,0,0.5)", whiteSpace:"nowrap" }}>{toast}</div>}
+
+      {/* Image zoom modal */}
+      {imgZoom && (
+        <div onClick={() => setImgZoom(null)} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.9)", zIndex:200, display:"flex", alignItems:"center", justifyContent:"center", padding:16 }}>
+          <img src={imgZoom} style={{ maxWidth:"100%", maxHeight:"90vh", borderRadius:12 }} />
+        </div>
+      )}
+
+      {/* HOME */}
+      {view === "home" && (
+        <div style={{ padding:"0 16px" }}>
+          <div style={{ paddingTop:52, paddingBottom:20 }}>
+            <div style={{ fontSize:11, letterSpacing:3, color:"#64748b", marginBottom:6, textTransform:"uppercase" }}>飲料金追蹤</div>
+            <h1 style={{ fontSize:28, fontWeight:700, lineHeight:1.2 }}>NXP 中班飲料訂購 🧋</h1>
+          </div>
+
+          {people.some(p => unpaidCounts[p.id] > 0) && (
+            <div className="card" style={{ padding:"14px 16px", marginBottom:16 }}>
+              <div style={{ fontSize:11, color:"#64748b", marginBottom:10, letterSpacing:1 }}>尚未收錢</div>
+              <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
+                {people.filter(p => unpaidCounts[p.id] > 0).map(p => (
+                  <div key={p.id} style={{ background:"rgba(251,146,60,0.15)", border:"1px solid rgba(251,146,60,0.3)", borderRadius:8, padding:"4px 10px", fontSize:13 }}>
+                    {p.name} <span style={{ color:"#fb923c", fontWeight:700 }}>×{unpaidCounts[p.id]}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <button onClick={startNewRound} style={{ width:"100%", padding:16, background:"linear-gradient(135deg,#f97316,#ef4444)", color:"#fff", fontSize:16, fontWeight:700, borderRadius:14, boxShadow:"0 4px 20px rgba(249,115,22,0.4)", marginBottom:24 }}>
+            ＋ 新增一輪飲料單
+          </button>
+
+          <div style={{ fontSize:13, color:"#64748b", marginBottom:12, letterSpacing:1 }}>歷史紀錄</div>
+          {rounds.length === 0 && <div style={{ textAlign:"center", color:"#475569", fontSize:14, padding:"32px 0" }}>還沒有紀錄，快去買飲料吧！🧋</div>}
+          {rounds.map(r => {
+            const unpaid = Object.values(r.payments).filter(s => s === "unpaid").length;
+            const paid = Object.values(r.payments).filter(s => s === "paid").length;
+            const total = roundTotal(r);
+            return (
+              <div key={r.id} className="card" onClick={() => openRound(r)} style={{ padding:"14px 16px", marginBottom:10, cursor:"pointer", display:"flex", gap:12, alignItems:"center" }}>
+                {r.image && <img src={r.image} onClick={e=>{e.stopPropagation();setImgZoom(r.image)}} style={{ width:52, height:52, objectFit:"cover", borderRadius:10, flexShrink:0 }} />}
+                <div style={{ flex:1 }}>
+                  <div style={{ fontWeight:700, fontSize:15 }}>{r.date} <span style={{ color:"#64748b", fontSize:12 }}>{r.dayLabel}</span></div>
+                  <div style={{ fontSize:12, color:"#94a3b8", marginTop:3 }}>
+                    已付 <span style={{ color:"#4ade80" }}>{paid}</span> 人・未付 <span style={{ color:"#fb923c" }}>{unpaid}</span> 人
+                    {total > 0 && <span style={{ color:"#f97316", marginLeft:8 }}>共 ${total}</span>}
+                  </div>
+                </div>
+                <div style={{ fontSize:20, color:"#475569" }}>›</div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* NEW ROUND */}
+      {view === "newRound" && activeRound && (
+        <div style={{ padding:"0 16px" }}>
+          <div style={{ paddingTop:52, paddingBottom:16, display:"flex", alignItems:"center", gap:12 }}>
+            <button onClick={() => setView("home")} style={{ background:"rgba(255,255,255,0.08)", borderRadius:999, width:36, height:36, color:"#e2e8f0", fontSize:18 }}>‹</button>
+            <div>
+              <div style={{ fontSize:12, color:"#64748b" }}>{activeRound.date} {activeRound.dayLabel}</div>
+              <h2 style={{ fontSize:20, fontWeight:700 }}>新增飲料單</h2>
+            </div>
+          </div>
+
+          {/* Image upload */}
+          <div className="card" style={{ padding:"14px 16px", marginBottom:14 }}>
+            <div style={{ fontSize:12, color:"#64748b", marginBottom:10 }}>📷 訂單截圖（選填）</div>
+            {activeRound.image ? (
+              <div style={{ position:"relative" }}>
+                <img src={activeRound.image} onClick={() => setImgZoom(activeRound.image)} style={{ width:"100%", maxHeight:180, objectFit:"cover", borderRadius:10, cursor:"pointer" }} />
+                <button onClick={() => setActiveRound(r => ({...r, image:null}))} style={{ position:"absolute", top:8, right:8, background:"rgba(0,0,0,0.6)", color:"#fff", borderRadius:999, width:28, height:28, fontSize:14 }}>✕</button>
+              </div>
+            ) : (
+              <button onClick={() => fileRef.current.click()} style={{ width:"100%", padding:14, background:"rgba(255,255,255,0.04)", border:"1.5px dashed rgba(255,255,255,0.15)", borderRadius:12, color:"#64748b", fontSize:14 }}>
+                ＋ 上傳圖片
+              </button>
+            )}
+            <input ref={fileRef} type="file" accept="image/*" style={{ display:"none" }} onChange={handleImageUpload} />
+          </div>
+
+          {/* Per-person orders */}
+          {people.map(p => {
+            const status = activeRound.payments[p.id] || "absent";
+            const order = activeRound.orders?.[p.id] || { drink:"", amount:"" };
+            return (
+              <div key={p.id} className="card" style={{ padding:"14px 16px", marginBottom:10 }}>
+                <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom: status==="absent" ? 0 : 10 }}>
+                  <div>
+                    <div style={{ fontWeight:600, fontSize:16 }}>{p.name}</div>
+                    <div style={{ fontSize:11, color:"#475569" }}>{p.workDays.map(d => DAYS[d]).join("・")}</div>
+                  </div>
+                  <div style={{ display:"flex", gap:6 }}>
+                    <button onClick={() => toggleAbsent(p.id)} style={{ background:status==="absent"?"rgba(148,163,184,0.2)":"rgba(255,255,255,0.05)", border:`1px solid ${status==="absent"?"#94a3b8":"rgba(255,255,255,0.1)"}`, borderRadius:8, padding:"4px 10px", fontSize:12, color:"#94a3b8" }}>休假</button>
+                    <button onClick={() => togglePayment(p.id)} style={{ width:76, height:34, borderRadius:10, background:status==="paid"?"rgba(74,222,128,0.15)":status==="absent"?"rgba(255,255,255,0.04)":"rgba(251,146,60,0.15)", border:`1.5px solid ${statusColor(status)}`, color:statusColor(status), fontSize:13, fontWeight:700, opacity:status==="absent"?0.4:1 }}>
+                      {statusIcon(status)} {statusLabel(status)}
+                    </button>
+                  </div>
+                </div>
+                {status !== "absent" && (
+                  <div style={{ display:"flex", gap:8 }}>
+                    <input className="inp" placeholder="喝什麼" value={order.drink} onChange={e => updateOrder(p.id,"drink",e.target.value)} style={{ flex:2, fontSize:14, padding:"8px 12px" }} />
+                    <input className="inp" placeholder="金額" type="number" value={order.amount} onChange={e => updateOrder(p.id,"amount",e.target.value)} style={{ flex:1, fontSize:14, padding:"8px 12px" }} />
+                  </div>
+                )}
+              </div>
+            );
+          })}
+
+          {/* Total */}
+          {roundTotal(activeRound) > 0 && (
+            <div style={{ textAlign:"right", fontSize:14, color:"#f97316", fontWeight:700, marginBottom:12 }}>
+              總計：${roundTotal(activeRound)}
+            </div>
+          )}
+
+          <button onClick={saveRound} style={{ width:"100%", padding:16, marginBottom:16, background:"linear-gradient(135deg,#22c55e,#16a34a)", color:"#fff", fontSize:16, fontWeight:700, borderRadius:14, boxShadow:"0 4px 20px rgba(34,197,94,0.4)" }}>儲存紀錄</button>
+        </div>
+      )}
+
+      {/* ROUND DETAIL */}
+      {view === "roundDetail" && activeRound && (
+        <div style={{ padding:"0 16px" }}>
+          <div style={{ paddingTop:52, paddingBottom:16, display:"flex", alignItems:"center", gap:12 }}>
+            <button onClick={() => setView("home")} style={{ background:"rgba(255,255,255,0.08)", borderRadius:999, width:36, height:36, color:"#e2e8f0", fontSize:18 }}>‹</button>
+            <div style={{ flex:1 }}>
+              <div style={{ fontSize:12, color:"#64748b" }}>{activeRound.dayLabel}</div>
+              <h2 style={{ fontSize:20, fontWeight:700 }}>{activeRound.date}</h2>
+            </div>
+            <button onClick={() => deleteRound(activeRound.id)} style={{ background:"rgba(239,68,68,0.1)", border:"1px solid rgba(239,68,68,0.3)", borderRadius:8, padding:"6px 12px", color:"#f87171", fontSize:12 }}>刪除</button>
+          </div>
+
+          {activeRound.image && (
+            <img src={activeRound.image} onClick={() => setImgZoom(activeRound.image)} style={{ width:"100%", maxHeight:180, objectFit:"cover", borderRadius:14, marginBottom:14, cursor:"pointer" }} />
+          )}
+
+          <div style={{ fontSize:12, color:"#64748b", marginBottom:10 }}>點一下切換付款狀態</div>
+          {people.map(p => {
+            const status = activeRound.payments[p.id] || "absent";
+            const order = activeRound.orders?.[p.id];
+            return (
+              <div key={p.id} className="card" onClick={() => updateRoundPayment(p.id)} style={{ padding:"14px 16px", marginBottom:10, cursor:"pointer" }}>
+                <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+                  <div>
+                    <div style={{ fontWeight:600, fontSize:16 }}>{p.name}</div>
+                    {order && order.drink && <div style={{ fontSize:12, color:"#94a3b8", marginTop:2 }}>{order.drink}{order.amount ? ` · $${order.amount}` : ""}</div>}
+                  </div>
+                  <div style={{ padding:"5px 14px", borderRadius:999, background:status==="paid"?"rgba(74,222,128,0.15)":status==="absent"?"rgba(255,255,255,0.06)":"rgba(251,146,60,0.15)", border:`1.5px solid ${statusColor(status)}`, color:statusColor(status), fontSize:13, fontWeight:700 }}>
+                    {statusIcon(status)} {statusLabel(status)}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+          {roundTotal(activeRound) > 0 && (
+            <div style={{ textAlign:"right", fontSize:14, color:"#f97316", fontWeight:700, marginTop:4 }}>總計：${roundTotal(activeRound)}</div>
+          )}
+        </div>
+      )}
+
+      {/* MANAGE */}
+      {view === "manage" && (
+        <div style={{ padding:"0 16px" }}>
+          <div style={{ paddingTop:52, paddingBottom:20, display:"flex", alignItems:"center", gap:12 }}>
+            <button onClick={() => setView("home")} style={{ background:"rgba(255,255,255,0.08)", borderRadius:999, width:36, height:36, color:"#e2e8f0", fontSize:18 }}>‹</button>
+            <h2 style={{ fontSize:20, fontWeight:700 }}>管理同事</h2>
+          </div>
+          {people.map(p => (
+            <div key={p.id} className="card" onClick={() => setEditPerson({...p})} style={{ padding:"14px 16px", marginBottom:10, cursor:"pointer" }}>
+              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                <div>
+                  <div style={{ fontWeight:700, fontSize:16 }}>{p.name}</div>
+                  <div style={{ fontSize:12, color:"#94a3b8", marginTop:4 }}>上班日：{p.workDays.map(d => "週"+DAYS[d]).join("、")}</div>
+                </div>
+                <div style={{ color:"#64748b", fontSize:18 }}>›</div>
+              </div>
+            </div>
+          ))}
+          <button onClick={() => setShowAddPerson(true)} style={{ width:"100%", padding:14, marginTop:8, background:"rgba(255,255,255,0.06)", border:"1.5px dashed rgba(255,255,255,0.2)", color:"#94a3b8", fontSize:15, borderRadius:14 }}>＋ 新增同事</button>
+        </div>
+      )}
+
+      {/* Edit Person Modal */}
+      {editPerson && (
+        <div onClick={() => setEditPerson(null)} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.7)", zIndex:100, display:"flex", alignItems:"flex-end" }}>
+          <div onClick={e => e.stopPropagation()} style={{ width:"100%", background:"#1e293b", borderRadius:"20px 20px 0 0", padding:"24px 20px 40px" }}>
+            <div style={{ fontWeight:700, fontSize:18, marginBottom:20 }}>編輯 {editPerson.name}</div>
+            <input value={editPerson.name} onChange={e => setEditPerson({...editPerson, name:e.target.value})} className="inp" style={{ marginBottom:16 }} placeholder="姓名" />
+            <div style={{ fontSize:13, color:"#64748b", marginBottom:10 }}>上班日</div>
+            <div style={{ display:"flex", gap:8, marginBottom:24 }}>
+              {DAYS.map((d,i) => {
+                const active = editPerson.workDays.includes(i);
+                return <div key={i} className="day-chip" style={{ background:active?"#f97316":"rgba(255,255,255,0.07)", color:active?"#fff":"#64748b", border:active?"2px solid #f97316":"2px solid transparent" }} onClick={() => setEditPerson(ep => ({...ep, workDays:active?ep.workDays.filter(x=>x!==i):[...ep.workDays,i].sort()}))}>{d}</div>;
+              })}
+            </div>
+            <div style={{ display:"flex", gap:10 }}>
+              <button onClick={() => deletePerson(editPerson.id)} style={{ flex:1, padding:14, borderRadius:12, background:"rgba(239,68,68,0.15)", border:"1px solid rgba(239,68,68,0.3)", color:"#f87171", fontSize:15 }}>刪除</button>
+              <button onClick={savePerson} style={{ flex:2, padding:14, borderRadius:12, background:"#f97316", color:"#fff", fontSize:15, fontWeight:700 }}>儲存</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Person Modal */}
+      {showAddPerson && (
+        <div onClick={() => setShowAddPerson(false)} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.7)", zIndex:100, display:"flex", alignItems:"flex-end" }}>
+          <div onClick={e => e.stopPropagation()} style={{ width:"100%", background:"#1e293b", borderRadius:"20px 20px 0 0", padding:"24px 20px 40px" }}>
+            <div style={{ fontWeight:700, fontSize:18, marginBottom:20 }}>新增同事</div>
+            <input value={newName} onChange={e => setNewName(e.target.value)} className="inp" style={{ marginBottom:16 }} placeholder="姓名" />
+            <div style={{ fontSize:13, color:"#64748b", marginBottom:10 }}>上班日</div>
+            <div style={{ display:"flex", gap:8, marginBottom:24 }}>
+              {DAYS.map((d,i) => {
+                const active = newWorkDays.includes(i);
+                return <div key={i} className="day-chip" style={{ background:active?"#f97316":"rgba(255,255,255,0.07)", color:active?"#fff":"#64748b", border:active?"2px solid #f97316":"2px solid transparent" }} onClick={() => setNewWorkDays(ds => active?ds.filter(x=>x!==i):[...ds,i].sort())}>{d}</div>;
+              })}
+            </div>
+            <button onClick={addPerson} style={{ width:"100%", padding:14, borderRadius:12, background:"#f97316", color:"#fff", fontSize:15, fontWeight:700 }}>新增</button>
+          </div>
+        </div>
+      )}
+
+      {/* Bottom Nav */}
+      <div style={{ position:"fixed", bottom:0, left:0, right:0, background:"rgba(15,23,42,0.95)", backdropFilter:"blur(12px)", borderTop:"1px solid rgba(255,255,255,0.08)", display:"flex" }}>
+        {[{id:"home",label:"紀錄",icon:"📋"},{id:"manage",label:"同事",icon:"👥"}].map(tab => (
+          <button key={tab.id} onClick={() => setView(tab.id)} style={{ flex:1, padding:"12px 0 16px", background:"none", color:view===tab.id?"#f97316":"#475569", fontSize:10, fontWeight:700, letterSpacing:1, display:"flex", flexDirection:"column", alignItems:"center", gap:2, borderTop:`2px solid ${view===tab.id?"#f97316":"transparent"}`, transition:"color .15s" }}>
+            <span style={{ fontSize:22 }}>{tab.icon}</span>{tab.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>
