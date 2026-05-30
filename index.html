@@ -68,6 +68,7 @@ function App() {
       date: new Date().toLocaleDateString("zh-TW"),
       dayLabel: "週" + DAYS[today],
       image: null,
+      drinkNote: "",
       orders: Object.fromEntries(people.map(p => [p.id, { drink: "", amount: "" }])),
       payments: Object.fromEntries(people.map(p => [p.id, present.some(x => x.id === p.id) ? "unpaid" : "absent"])),
     };
@@ -211,6 +212,12 @@ function App() {
             </div>
           </div>
 
+          {/* Drink note */}
+          <div className="card" style={{ padding:"14px 16px", marginBottom:14 }}>
+            <div style={{ fontSize:12, color:"#64748b", marginBottom:10 }}>🧋 今天喝什麼</div>
+            <input className="inp" placeholder="例：茶湯會、50嵐烏龍..." value={activeRound.drinkNote||""} onChange={e => setActiveRound(r => ({...r, drinkNote:e.target.value}))} />
+          </div>
+
           {/* Image upload */}
           <div className="card" style={{ padding:"14px 16px", marginBottom:14 }}>
             <div style={{ fontSize:12, color:"#64748b", marginBottom:10 }}>📷 訂單截圖（選填）</div>
@@ -277,6 +284,13 @@ function App() {
             </div>
             <button onClick={() => deleteRound(activeRound.id)} style={{ background:"rgba(239,68,68,0.1)", border:"1px solid rgba(239,68,68,0.3)", borderRadius:8, padding:"6px 12px", color:"#f87171", fontSize:12 }}>刪除</button>
           </div>
+
+          {activeRound.drinkNote && (
+            <div className="card" style={{ padding:"12px 16px", marginBottom:12, display:"flex", alignItems:"center", gap:10 }}>
+              <span style={{ fontSize:20 }}>🧋</span>
+              <span style={{ fontSize:15, fontWeight:600 }}>{activeRound.drinkNote}</span>
+            </div>
+          )}
 
           {activeRound.image && (
             <img src={activeRound.image} onClick={() => setImgZoom(activeRound.image)} style={{ width:"100%", maxHeight:180, objectFit:"cover", borderRadius:14, marginBottom:14, cursor:"pointer" }} />
