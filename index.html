@@ -291,7 +291,7 @@ function App() {
       {/* ── NEW ROUND ── */}
       {view === "newRound" && activeRound && (
         <div style={{ padding:"0 18px" }}>
-          <div style={{ height:80 }} />
+          <div style={{ height:110 }} />
           <div style={{ position:"fixed", top:0, left:0, right:0, zIndex:50, background:"var(--bg)", borderBottom:"1px solid var(--border)", paddingTop:"calc(env(safe-area-inset-top, 0px) + 14px)", paddingBottom:"14px", paddingLeft:"18px", paddingRight:"18px", display:"flex", alignItems:"center", gap:14 }}>
             <button onClick={() => setView("home")} style={{ background:"var(--bg3)", border:"1px solid var(--border)", borderRadius:999, width:34, height:34, color:"var(--text2)", fontSize:16, flexShrink:0 }}>‹</button>
             <div>
@@ -384,7 +384,7 @@ function App() {
       {/* ── ROUND DETAIL ── */}
       {view === "roundDetail" && activeRound && (
         <div style={{ padding:"0 18px" }}>
-          <div style={{ height:80 }} />
+          <div style={{ height:110 }} />
           <div style={{ position:"fixed", top:0, left:0, right:0, zIndex:50, background:"var(--bg)", borderBottom:"1px solid var(--border)", paddingTop:"calc(env(safe-area-inset-top, 0px) + 14px)", paddingBottom:"14px", paddingLeft:"18px", paddingRight:"18px", display:"flex", alignItems:"center", gap:14 }}>
             <button onClick={() => setView("home")} style={{ background:"var(--bg3)", border:"1px solid var(--border)", borderRadius:999, width:34, height:34, color:"var(--text2)", fontSize:16, flexShrink:0 }}>‹</button>
             <div style={{ flex:1 }}>
@@ -431,7 +431,7 @@ function App() {
       {/* ── MANAGE ── */}
       {view === "manage" && (
         <div style={{ padding:"0 18px" }}>
-          <div style={{ height:80 }} />
+          <div style={{ height:110 }} />
           <div style={{ position:"fixed", top:0, left:0, right:0, zIndex:50, background:"var(--bg)", borderBottom:"1px solid var(--border)", paddingTop:"calc(env(safe-area-inset-top, 0px) + 14px)", paddingBottom:"14px", paddingLeft:"18px", paddingRight:"18px", display:"flex", alignItems:"center", gap:14 }}>
             <button onClick={() => setView("home")} style={{ background:"var(--bg3)", border:"1px solid var(--border)", borderRadius:999, width:34, height:34, color:"var(--text2)", fontSize:16, flexShrink:0 }}>‹</button>
             <h2 style={{ fontSize:18, fontWeight:400, color:"var(--text)", letterSpacing:"0.03em" }}>同事名單</h2>
