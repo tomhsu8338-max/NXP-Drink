@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <title>NXP 中班吃吃喝喝</title>
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -291,8 +291,9 @@ function App() {
       {/* ── NEW ROUND ── */}
       {view === "newRound" && activeRound && (
         <div style={{ padding:"0 18px" }}>
-          <div style={{ paddingTop:52, paddingBottom:20, display:"flex", alignItems:"center", gap:14 }}>
-            <button onClick={() => setView("home")} style={{ background:"var(--bg3)", border:"1px solid var(--border)", borderRadius:999, width:34, height:34, color:"var(--text2)", fontSize:16 }}>‹</button>
+          <div style={{ height:72 }} />
+          <div style={{ position:"fixed", top:0, left:0, right:0, zIndex:50, background:"var(--bg)", borderBottom:"1px solid var(--border)", padding:"14px 18px", display:"flex", alignItems:"center", gap:14 }}>
+            <button onClick={() => setView("home")} style={{ background:"var(--bg3)", border:"1px solid var(--border)", borderRadius:999, width:34, height:34, color:"var(--text2)", fontSize:16, flexShrink:0 }}>‹</button>
             <div>
               <div style={{ fontSize:11, color:"var(--text3)", letterSpacing:"0.05em" }}>{activeRound.date} {activeRound.dayLabel}</div>
               <h2 style={{ fontSize:18, fontWeight:400, color:"var(--text)", letterSpacing:"0.03em" }}>{typeEmoji(activeRound.type)} {typeLabel(activeRound.type)}單</h2>
@@ -383,8 +384,9 @@ function App() {
       {/* ── ROUND DETAIL ── */}
       {view === "roundDetail" && activeRound && (
         <div style={{ padding:"0 18px" }}>
-          <div style={{ paddingTop:52, paddingBottom:20, display:"flex", alignItems:"center", gap:14 }}>
-            <button onClick={() => setView("home")} style={{ background:"var(--bg3)", border:"1px solid var(--border)", borderRadius:999, width:34, height:34, color:"var(--text2)", fontSize:16 }}>‹</button>
+          <div style={{ height:80 }} />
+          <div style={{ position:"fixed", top:0, left:0, right:0, zIndex:50, background:"var(--bg)", borderBottom:"1px solid var(--border)", padding:"14px 18px", display:"flex", alignItems:"center", gap:14 }}>
+            <button onClick={() => setView("home")} style={{ background:"var(--bg3)", border:"1px solid var(--border)", borderRadius:999, width:34, height:34, color:"var(--text2)", fontSize:16, flexShrink:0 }}>‹</button>
             <div style={{ flex:1 }}>
               <div style={{ fontSize:11, color:"var(--text3)", letterSpacing:"0.05em" }}>{activeRound.dayLabel} · {typeLabel(activeRound.type)}</div>
               <h2 style={{ fontSize:18, fontWeight:400, color:"var(--text)" }}>{activeRound.shopName || activeRound.date}</h2>
@@ -429,8 +431,9 @@ function App() {
       {/* ── MANAGE ── */}
       {view === "manage" && (
         <div style={{ padding:"0 18px" }}>
-          <div style={{ paddingTop:52, paddingBottom:20, display:"flex", alignItems:"center", gap:14 }}>
-            <button onClick={() => setView("home")} style={{ background:"var(--bg3)", border:"1px solid var(--border)", borderRadius:999, width:34, height:34, color:"var(--text2)", fontSize:16 }}>‹</button>
+          <div style={{ height:72 }} />
+          <div style={{ position:"fixed", top:0, left:0, right:0, zIndex:50, background:"var(--bg)", borderBottom:"1px solid var(--border)", padding:"14px 18px", display:"flex", alignItems:"center", gap:14 }}>
+            <button onClick={() => setView("home")} style={{ background:"var(--bg3)", border:"1px solid var(--border)", borderRadius:999, width:34, height:34, color:"var(--text2)", fontSize:16, flexShrink:0 }}>‹</button>
             <h2 style={{ fontSize:18, fontWeight:400, color:"var(--text)", letterSpacing:"0.03em" }}>同事名單</h2>
           </div>
           {people.map(p => (
