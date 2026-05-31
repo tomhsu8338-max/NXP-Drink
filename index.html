@@ -7,23 +7,63 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="吃吃喝喝" />
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500&display=swap" rel="stylesheet" />
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <style>
+    :root {
+      --bg: #0a0a0c;
+      --bg2: #111114;
+      --bg3: #18181c;
+      --border: rgba(255,255,255,0.07);
+      --border2: rgba(255,255,255,0.12);
+      --text: #c8c8cc;
+      --text2: #6b6b72;
+      --text3: #3a3a40;
+      --accent-drink: #7c9ea6;
+      --accent-food: #8a8fa8;
+      --paid: #6b8f71;
+      --unpaid: #a07850;
+      --skip: #5a5a6e;
+      --absent: #3a3a40;
+    }
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body { height: 100%; background: #0f172a; }
-    body { font-family: 'Noto Sans TC', sans-serif; color: #e2e8f0; }
-    button { cursor: pointer; border: none; outline: none; font-family: inherit; }
-    input { font-family: inherit; }
-    .card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; backdrop-filter: blur(8px); }
-    .day-chip { width: 34px; height: 34px; border-radius: 50%; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all .15s; border: 2px solid transparent; }
-    .day-chip:active { transform: scale(0.9); }
-    .inp { width: 100%; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 10px 14px; color: #e2e8f0; font-size: 15px; }
-    .inp:focus { outline: none; border-color: #f97316; }
-    button:active { opacity: 0.8; }
-    .tab-btn { padding: 8px 18px; border-radius: 999px; font-size: 14px; font-weight: 700; transition: all .15s; }
+    html, body { height: 100%; background: var(--bg); }
+    body { font-family: 'Noto Sans TC', sans-serif; color: var(--text); font-weight: 300; letter-spacing: 0.02em; }
+    button { cursor: pointer; border: none; outline: none; font-family: inherit; font-weight: 300; letter-spacing: 0.03em; }
+    input { font-family: inherit; font-weight: 300; }
+    .card {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+    }
+    .day-chip {
+      width: 32px; height: 32px; border-radius: 50%;
+      font-size: 12px; font-weight: 400;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: all .2s;
+      border: 1px solid var(--border);
+      color: var(--text2);
+      background: var(--bg2);
+    }
+    .day-chip:active { transform: scale(0.88); }
+    .inp {
+      width: 100%;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 14px;
+      color: var(--text);
+      font-size: 14px;
+      font-family: inherit;
+      font-weight: 300;
+      letter-spacing: 0.02em;
+    }
+    .inp::placeholder { color: var(--text3); }
+    .inp:focus { outline: none; border-color: var(--border2); }
+    button:active { opacity: 0.7; }
+    .label { font-size: 11px; color: var(--text2); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 8px; }
   </style>
 </head>
 <body>
@@ -37,28 +77,14 @@ const defaultPeople = [
 ];
 function randomId() { return Math.random().toString(36).slice(2,9); }
 
-// status cycle: unpaid -> paid -> skip -> unpaid
-// absent is auto-set by workday, toggled separately
 const STATUS_CYCLE = { unpaid: "paid", paid: "skip", skip: "unpaid" };
 
-function statusColor(s) {
-  if (s === "paid") return "#4ade80";
-  if (s === "absent") return "#94a3b8";
-  if (s === "skip") return "#818cf8";
-  return "#fb923c"; // unpaid
-}
-function statusLabel(s) {
-  if (s === "paid") return "已付";
-  if (s === "absent") return "休假";
-  if (s === "skip") return "不點";
-  return "未付";
-}
-function statusBg(s) {
-  if (s === "paid") return "rgba(74,222,128,0.15)";
-  if (s === "absent") return "rgba(255,255,255,0.06)";
-  if (s === "skip") return "rgba(129,140,248,0.15)";
-  return "rgba(251,146,60,0.15)";
-}
+const STATUS = {
+  paid:   { label:"已付", color:"#6b8f71", bg:"rgba(107,143,113,0.12)", border:"rgba(107,143,113,0.35)" },
+  unpaid: { label:"未付", color:"#a07850", bg:"rgba(160,120,80,0.12)",  border:"rgba(160,120,80,0.35)" },
+  skip:   { label:"不點", color:"#5a5a72", bg:"rgba(90,90,114,0.12)",   border:"rgba(90,90,114,0.35)" },
+  absent: { label:"休假", color:"#3a3a44", bg:"rgba(58,58,68,0.12)",    border:"rgba(58,58,68,0.4)" },
+};
 
 function App() {
   const [people, setPeople] = useState(() => {
@@ -75,8 +101,7 @@ function App() {
   const [toast, setToast] = useState("");
   const [showAddPerson, setShowAddPerson] = useState(false);
   const [imgZoom, setImgZoom] = useState(null);
-  const drinkFileRef = useRef();
-  const foodFileRef = useRef();
+  const fileRef = useRef();
 
   useEffect(() => { localStorage.setItem("nxp_people", JSON.stringify(people)); }, [people]);
   useEffect(() => { localStorage.setItem("nxp_rounds", JSON.stringify(rounds)); }, [rounds]);
@@ -88,72 +113,65 @@ function App() {
     const today = todayIdx();
     const present = people.filter(p => p.workDays.includes(today));
     return {
-      id: randomId(),
-      type, // "drink" | "food"
+      id: randomId(), type,
       date: new Date().toLocaleDateString("zh-TW"),
       dayLabel: "週" + DAYS[today],
-      image: null,
-      shopName: "",
-      note: "",
+      image: null, shopName: "",
       orders: Object.fromEntries(people.map(p => [p.id, { item: "", amount: "" }])),
       payments: Object.fromEntries(people.map(p => [p.id, present.some(x => x.id === p.id) ? "unpaid" : "absent"])),
     };
   }
 
-  function startRound(type) {
-    setActiveRound(makeRound(type));
-    setView("newRound");
-  }
+  function startRound(type) { setActiveRound(makeRound(type)); setView("newRound"); }
 
-  function handleImageUpload(e, field) {
-    const file = e.target.files[0];
-    if (!file) return;
+  function handleImageUpload(e) {
+    const file = e.target.files[0]; if (!file) return;
     const reader = new FileReader();
-    reader.onload = ev => setActiveRound(r => ({ ...r, [field]: ev.target.result }));
+    reader.onload = ev => setActiveRound(r => ({ ...r, image: ev.target.result }));
     reader.readAsDataURL(file);
   }
 
-  function updateOrder(personId, field, val) {
-    setActiveRound(r => ({ ...r, orders: { ...r.orders, [personId]: { ...r.orders[personId], [field]: val } } }));
+  function updateOrder(pid, field, val) {
+    setActiveRound(r => ({ ...r, orders: { ...r.orders, [pid]: { ...r.orders[pid], [field]: val } } }));
   }
 
-  function cycleStatus(personId) {
+  function cycleStatus(pid) {
     setActiveRound(r => {
-      const cur = r.payments[personId];
+      const cur = r.payments[pid];
       if (cur === "absent") return r;
-      return { ...r, payments: { ...r.payments, [personId]: STATUS_CYCLE[cur] || "unpaid" } };
+      return { ...r, payments: { ...r.payments, [pid]: STATUS_CYCLE[cur] || "unpaid" } };
     });
   }
 
-  function toggleAbsent(personId) {
+  function toggleAbsent(pid) {
     setActiveRound(r => {
-      const cur = r.payments[personId];
-      return { ...r, payments: { ...r.payments, [personId]: cur === "absent" ? "unpaid" : "absent" } };
+      const cur = r.payments[pid];
+      return { ...r, payments: { ...r.payments, [pid]: cur === "absent" ? "unpaid" : "absent" } };
     });
   }
 
-  function saveRound() { setRounds(rs => [activeRound, ...rs]); showToast("✅ 已儲存！"); setView("home"); setActiveRound(null); }
+  function saveRound() { setRounds(rs => [activeRound, ...rs]); showToast("已儲存"); setView("home"); setActiveRound(null); }
   function openRound(round) { setActiveRound(round); setView("roundDetail"); }
 
-  function cycleRoundPayment(personId) {
+  function cycleRoundPayment(pid) {
     setActiveRound(r => {
-      const cur = r.payments[personId];
+      const cur = r.payments[pid];
       if (cur === "absent") return r;
-      const updated = { ...r, payments: { ...r.payments, [personId]: STATUS_CYCLE[cur] || "unpaid" } };
+      const updated = { ...r, payments: { ...r.payments, [pid]: STATUS_CYCLE[cur] || "unpaid" } };
       setRounds(rs => rs.map(x => x.id === updated.id ? updated : x));
       return updated;
     });
   }
 
-  function deleteRound(id) { setRounds(rs => rs.filter(r => r.id !== id)); setView("home"); setActiveRound(null); showToast("🗑️ 已刪除"); }
+  function deleteRound(id) { setRounds(rs => rs.filter(r => r.id !== id)); setView("home"); setActiveRound(null); showToast("已刪除"); }
 
   function addPerson() {
     if (!newName.trim()) return;
-    const p = { id: Date.now(), name: newName.trim(), workDays: newWorkDays };
-    setPeople(ps => [...ps, p]); setNewName(""); setNewWorkDays([0,1,2,3,4]); setShowAddPerson(false); showToast("👤 已新增 " + p.name);
+    setPeople(ps => [...ps, { id: Date.now(), name: newName.trim(), workDays: newWorkDays }]);
+    setNewName(""); setNewWorkDays([0,1,2,3,4]); setShowAddPerson(false); showToast("已新增");
   }
-  function savePerson() { setPeople(ps => ps.map(p => p.id === editPerson.id ? editPerson : p)); setEditPerson(null); showToast("✏️ 已更新"); }
-  function deletePerson(id) { setPeople(ps => ps.filter(p => p.id !== id)); setEditPerson(null); showToast("🗑️ 已刪除"); }
+  function savePerson() { setPeople(ps => ps.map(p => p.id === editPerson.id ? editPerson : p)); setEditPerson(null); showToast("已更新"); }
+  function deletePerson(id) { setPeople(ps => ps.filter(p => p.id !== id)); setEditPerson(null); showToast("已刪除"); }
 
   const unpaidCounts = {};
   people.forEach(p => { unpaidCounts[p.id] = 0; });
@@ -170,75 +188,100 @@ function App() {
 
   const typeEmoji = t => t === "drink" ? "🧋" : "🍱";
   const typeLabel = t => t === "drink" ? "飲料" : "食物";
-  const typePlaceholder = t => t === "drink" ? "例：珍珠奶茶" : "例：排骨飯";
+  const typePlaceholder = t => t === "drink" ? "品項" : "品項";
   const typeShopPlaceholder = t => t === "drink" ? "例：50嵐、茶湯會" : "例：便當店、麥當勞";
 
+  const divider = <div style={{ height:1, background:"var(--border)", margin:"0 0 10px" }} />;
+
   return (
-    <div style={{ minHeight:"100vh", background:"linear-gradient(135deg,#0f172a 0%,#1e293b 50%,#0f172a 100%)", paddingBottom:90 }}>
+    <div style={{ minHeight:"100vh", background:"var(--bg)", paddingBottom:90 }}>
 
-      {toast && <div style={{ position:"fixed", top:20, left:"50%", transform:"translateX(-50%)", background:"#1e293b", border:"1px solid rgba(255,255,255,0.15)", padding:"10px 20px", borderRadius:999, fontSize:14, fontWeight:600, zIndex:999, boxShadow:"0 4px 20px rgba(0,0,0,0.5)", whiteSpace:"nowrap" }}>{toast}</div>}
+      {/* Toast */}
+      {toast && (
+        <div style={{ position:"fixed", top:24, left:"50%", transform:"translateX(-50%)", background:"var(--bg3)", border:"1px solid var(--border2)", padding:"9px 22px", borderRadius:999, fontSize:13, zIndex:999, whiteSpace:"nowrap", color:"var(--text)", letterSpacing:"0.05em" }}>
+          {toast}
+        </div>
+      )}
 
+      {/* Image zoom */}
       {imgZoom && (
-        <div onClick={() => setImgZoom(null)} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.92)", zIndex:200, display:"flex", alignItems:"center", justifyContent:"center", padding:16 }}>
-          <img src={imgZoom} style={{ maxWidth:"100%", maxHeight:"90vh", borderRadius:12 }} />
+        <div onClick={() => setImgZoom(null)} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.95)", zIndex:200, display:"flex", alignItems:"center", justifyContent:"center", padding:16 }}>
+          <img src={imgZoom} style={{ maxWidth:"100%", maxHeight:"90vh", borderRadius:8 }} />
         </div>
       )}
 
       {/* ── HOME ── */}
       {view === "home" && (
-        <div style={{ padding:"0 16px" }}>
-          <div style={{ paddingTop:52, paddingBottom:20 }}>
-            <div style={{ fontSize:11, letterSpacing:3, color:"#64748b", marginBottom:6, textTransform:"uppercase" }}>收款追蹤</div>
-            <h1 style={{ fontSize:26, fontWeight:700, lineHeight:1.2 }}>NXP 中班吃吃喝喝 🍱🧋</h1>
+        <div style={{ padding:"0 18px" }}>
+          <div style={{ paddingTop:58, paddingBottom:28 }}>
+            <div style={{ fontSize:10, letterSpacing:"0.2em", color:"var(--text3)", marginBottom:10, textTransform:"uppercase" }}>NXP · 中班</div>
+            <h1 style={{ fontSize:24, fontWeight:300, color:"var(--text)", lineHeight:1.3, letterSpacing:"0.04em" }}>吃吃喝喝</h1>
           </div>
 
+          {/* Unpaid summary */}
           {people.some(p => unpaidCounts[p.id] > 0) && (
-            <div className="card" style={{ padding:"14px 16px", marginBottom:16 }}>
-              <div style={{ fontSize:11, color:"#64748b", marginBottom:10, letterSpacing:1 }}>尚未收錢</div>
+            <div className="card" style={{ padding:"14px 16px", marginBottom:20 }}>
+              <div className="label">待收款</div>
               <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
                 {people.filter(p => unpaidCounts[p.id] > 0).map(p => (
-                  <div key={p.id} style={{ background:"rgba(251,146,60,0.15)", border:"1px solid rgba(251,146,60,0.3)", borderRadius:8, padding:"4px 10px", fontSize:13 }}>
-                    {p.name} <span style={{ color:"#fb923c", fontWeight:700 }}>×{unpaidCounts[p.id]}</span>
+                  <div key={p.id} style={{ background:"rgba(160,120,80,0.1)", border:"1px solid rgba(160,120,80,0.25)", borderRadius:6, padding:"3px 10px", fontSize:13, color:"#a07850" }}>
+                    {p.name} <span style={{ opacity:0.7 }}>×{unpaidCounts[p.id]}</span>
                   </div>
                 ))}
               </div>
             </div>
           )}
 
-          <div style={{ display:"flex", gap:10, marginBottom:24 }}>
-            <button onClick={() => startRound("drink")} style={{ flex:1, padding:16, background:"linear-gradient(135deg,#f97316,#ef4444)", color:"#fff", fontSize:15, fontWeight:700, borderRadius:14, boxShadow:"0 4px 16px rgba(249,115,22,0.35)" }}>
-              🧋 新增飲料單
-            </button>
-            <button onClick={() => startRound("food")} style={{ flex:1, padding:16, background:"linear-gradient(135deg,#8b5cf6,#6366f1)", color:"#fff", fontSize:15, fontWeight:700, borderRadius:14, boxShadow:"0 4px 16px rgba(139,92,246,0.35)" }}>
-              🍱 新增食物單
-            </button>
+          {/* New round buttons */}
+          <div style={{ display:"flex", gap:10, marginBottom:28 }}>
+            <button onClick={() => startRound("drink")} style={{
+              flex:1, padding:"15px 0",
+              background:"var(--bg3)",
+              border:"1px solid rgba(124,158,166,0.3)",
+              color:"#7c9ea6", fontSize:14, fontWeight:400,
+              borderRadius:10, letterSpacing:"0.05em",
+              boxShadow:"inset 0 1px 0 rgba(255,255,255,0.04)",
+            }}>🧋 飲料單</button>
+            <button onClick={() => startRound("food")} style={{
+              flex:1, padding:"15px 0",
+              background:"var(--bg3)",
+              border:"1px solid rgba(138,143,168,0.3)",
+              color:"#8a8fa8", fontSize:14, fontWeight:400,
+              borderRadius:10, letterSpacing:"0.05em",
+              boxShadow:"inset 0 1px 0 rgba(255,255,255,0.04)",
+            }}>🍱 食物單</button>
           </div>
 
-          <div style={{ fontSize:13, color:"#64748b", marginBottom:12, letterSpacing:1 }}>歷史紀錄</div>
-          {rounds.length === 0 && <div style={{ textAlign:"center", color:"#475569", fontSize:14, padding:"32px 0" }}>還沒有紀錄！</div>}
+          {/* History */}
+          <div className="label" style={{ marginBottom:14 }}>紀錄</div>
+          {rounds.length === 0 && (
+            <div style={{ textAlign:"center", color:"var(--text3)", fontSize:13, padding:"40px 0", letterSpacing:"0.05em" }}>尚無紀錄</div>
+          )}
           {rounds.map(r => {
             const unpaid = Object.values(r.payments).filter(s => s === "unpaid").length;
             const paid = Object.values(r.payments).filter(s => s === "paid").length;
             const total = roundTotal(r);
+            const accentColor = r.type === "drink" ? "#7c9ea6" : "#8a8fa8";
             return (
-              <div key={r.id} className="card" onClick={() => openRound(r)} style={{ padding:"14px 16px", marginBottom:10, cursor:"pointer", display:"flex", gap:12, alignItems:"center" }}>
+              <div key={r.id} className="card" onClick={() => openRound(r)} style={{ padding:"14px 16px", marginBottom:8, cursor:"pointer", display:"flex", gap:12, alignItems:"center" }}>
                 {r.image ? (
-                  <img src={r.image} onClick={e=>{e.stopPropagation();setImgZoom(r.image)}} style={{ width:52, height:52, objectFit:"cover", borderRadius:10, flexShrink:0 }} />
+                  <img src={r.image} onClick={e=>{e.stopPropagation();setImgZoom(r.image)}} style={{ width:46, height:46, objectFit:"cover", borderRadius:8, flexShrink:0, opacity:0.85 }} />
                 ) : (
-                  <div style={{ width:52, height:52, borderRadius:10, background:"rgba(255,255,255,0.06)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:24, flexShrink:0 }}>{typeEmoji(r.type)}</div>
+                  <div style={{ width:46, height:46, borderRadius:8, background:"var(--bg2)", border:"1px solid var(--border)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:20, flexShrink:0 }}>{typeEmoji(r.type)}</div>
                 )}
-                <div style={{ flex:1 }}>
-                  <div style={{ fontWeight:700, fontSize:15 }}>
-                    <span style={{ fontSize:12, color: r.type==="drink"?"#fb923c":"#a78bfa", marginRight:6, fontWeight:600 }}>{typeLabel(r.type)}</span>
-                    {r.shopName || r.date}
-                    {r.shopName && <span style={{ color:"#64748b", fontSize:12, marginLeft:6 }}>{r.date}</span>}
+                <div style={{ flex:1, minWidth:0 }}>
+                  <div style={{ fontSize:14, fontWeight:400, color:"var(--text)", display:"flex", alignItems:"center", gap:8 }}>
+                    <span style={{ fontSize:10, color:accentColor, letterSpacing:"0.1em", textTransform:"uppercase" }}>{typeLabel(r.type)}</span>
+                    <span style={{ overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{r.shopName || r.date}</span>
                   </div>
-                  <div style={{ fontSize:12, color:"#94a3b8", marginTop:3 }}>
-                    {r.dayLabel}・已付 <span style={{ color:"#4ade80" }}>{paid}</span> 人・未付 <span style={{ color:"#fb923c" }}>{unpaid}</span> 人
-                    {total > 0 && <span style={{ color:"#f97316", marginLeft:6 }}>共 ${total}</span>}
+                  <div style={{ fontSize:11, color:"var(--text2)", marginTop:4, letterSpacing:"0.03em" }}>
+                    {r.shopName && <span style={{ marginRight:8, color:"var(--text3)" }}>{r.date} {r.dayLabel}</span>}
+                    {!r.shopName && <span style={{ marginRight:8, color:"var(--text3)" }}>{r.dayLabel}</span>}
+                    已付 {paid} · 未付 <span style={{ color:"#a07850" }}>{unpaid}</span>
+                    {total > 0 && <span style={{ color:"var(--text2)", marginLeft:8 }}>$ {total}</span>}
                   </div>
                 </div>
-                <div style={{ fontSize:20, color:"#475569" }}>›</div>
+                <div style={{ fontSize:16, color:"var(--text3)" }}>›</div>
               </div>
             );
           })}
@@ -247,63 +290,73 @@ function App() {
 
       {/* ── NEW ROUND ── */}
       {view === "newRound" && activeRound && (
-        <div style={{ padding:"0 16px" }}>
-          <div style={{ paddingTop:52, paddingBottom:16, display:"flex", alignItems:"center", gap:12 }}>
-            <button onClick={() => setView("home")} style={{ background:"rgba(255,255,255,0.08)", borderRadius:999, width:36, height:36, color:"#e2e8f0", fontSize:18 }}>‹</button>
+        <div style={{ padding:"0 18px" }}>
+          <div style={{ paddingTop:52, paddingBottom:20, display:"flex", alignItems:"center", gap:14 }}>
+            <button onClick={() => setView("home")} style={{ background:"var(--bg3)", border:"1px solid var(--border)", borderRadius:999, width:34, height:34, color:"var(--text2)", fontSize:16 }}>‹</button>
             <div>
-              <div style={{ fontSize:12, color:"#64748b" }}>{activeRound.date} {activeRound.dayLabel}</div>
-              <h2 style={{ fontSize:20, fontWeight:700 }}>{typeEmoji(activeRound.type)} 新增{typeLabel(activeRound.type)}單</h2>
+              <div style={{ fontSize:11, color:"var(--text3)", letterSpacing:"0.05em" }}>{activeRound.date} {activeRound.dayLabel}</div>
+              <h2 style={{ fontSize:18, fontWeight:400, color:"var(--text)", letterSpacing:"0.03em" }}>{typeEmoji(activeRound.type)} {typeLabel(activeRound.type)}單</h2>
             </div>
           </div>
 
-          {/* Shop name & note */}
-          <div className="card" style={{ padding:"14px 16px", marginBottom:14 }}>
-            <div style={{ fontSize:12, color:"#64748b", marginBottom:8 }}>店名（選填）</div>
-            <input className="inp" placeholder={typeShopPlaceholder(activeRound.type)} value={activeRound.shopName} onChange={e => setActiveRound(r => ({...r, shopName:e.target.value}))} style={{ marginBottom:10 }} />
-            <div style={{ fontSize:12, color:"#64748b", marginBottom:8 }}>備註（選填）</div>
-            <input className="inp" placeholder="例：幫我多加珍珠" value={activeRound.note} onChange={e => setActiveRound(r => ({...r, note:e.target.value}))} />
+          {/* Shop name */}
+          <div className="card" style={{ padding:"14px 16px", marginBottom:12 }}>
+            <div className="label">店名（選填）</div>
+            <input className="inp" placeholder={typeShopPlaceholder(activeRound.type)} value={activeRound.shopName} onChange={e => setActiveRound(r => ({...r, shopName:e.target.value}))} />
           </div>
 
-          {/* Image upload */}
-          <div className="card" style={{ padding:"14px 16px", marginBottom:14 }}>
-            <div style={{ fontSize:12, color:"#64748b", marginBottom:10 }}>📷 訂單截圖（選填）</div>
+          {/* Image */}
+          <div className="card" style={{ padding:"14px 16px", marginBottom:12 }}>
+            <div className="label">訂單截圖（選填）</div>
             {activeRound.image ? (
               <div style={{ position:"relative" }}>
-                <img src={activeRound.image} onClick={() => setImgZoom(activeRound.image)} style={{ width:"100%", maxHeight:180, objectFit:"cover", borderRadius:10, cursor:"pointer" }} />
-                <button onClick={() => setActiveRound(r => ({...r, image:null}))} style={{ position:"absolute", top:8, right:8, background:"rgba(0,0,0,0.6)", color:"#fff", borderRadius:999, width:28, height:28, fontSize:14 }}>✕</button>
+                <img src={activeRound.image} onClick={() => setImgZoom(activeRound.image)} style={{ width:"100%", maxHeight:160, objectFit:"cover", borderRadius:8, cursor:"pointer", opacity:0.9 }} />
+                <button onClick={() => setActiveRound(r => ({...r, image:null}))} style={{ position:"absolute", top:8, right:8, background:"rgba(0,0,0,0.7)", color:"var(--text2)", borderRadius:999, width:26, height:26, fontSize:13, border:"1px solid var(--border)" }}>✕</button>
               </div>
             ) : (
-              <button onClick={() => (activeRound.type==="drink" ? drinkFileRef : foodFileRef).current.click()} style={{ width:"100%", padding:14, background:"rgba(255,255,255,0.04)", border:"1.5px dashed rgba(255,255,255,0.15)", borderRadius:12, color:"#64748b", fontSize:14 }}>
+              <button onClick={() => fileRef.current.click()} style={{ width:"100%", padding:12, background:"var(--bg2)", border:"1px dashed var(--border2)", borderRadius:8, color:"var(--text3)", fontSize:13, letterSpacing:"0.05em" }}>
                 ＋ 上傳圖片
               </button>
             )}
-            <input ref={drinkFileRef} type="file" accept="image/*" style={{ display:"none" }} onChange={e => handleImageUpload(e,"image")} />
-            <input ref={foodFileRef} type="file" accept="image/*" style={{ display:"none" }} onChange={e => handleImageUpload(e,"image")} />
+            <input ref={fileRef} type="file" accept="image/*" style={{ display:"none" }} onChange={handleImageUpload} />
           </div>
 
           {/* Per-person */}
-          <div style={{ fontSize:12, color:"#64748b", marginBottom:10 }}>點名 · 點狀態可循環切換：未付 → 已付 → 不點</div>
+          <div style={{ fontSize:11, color:"var(--text3)", letterSpacing:"0.05em", marginBottom:10, marginTop:4 }}>
+            點狀態循環切換：未付 → 已付 → 不點
+          </div>
           {people.map(p => {
             const status = activeRound.payments[p.id] || "absent";
             const order = activeRound.orders?.[p.id] || { item:"", amount:"" };
+            const st = STATUS[status];
             return (
-              <div key={p.id} className="card" style={{ padding:"14px 16px", marginBottom:10 }}>
-                <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom: status==="absent"||status==="skip" ? 0 : 10 }}>
+              <div key={p.id} className="card" style={{ padding:"14px 16px", marginBottom:8 }}>
+                <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom: (status==="absent"||status==="skip") ? 0 : 10 }}>
                   <div>
-                    <div style={{ fontWeight:600, fontSize:16 }}>{p.name}</div>
-                    <div style={{ fontSize:11, color:"#475569" }}>{p.workDays.map(d => DAYS[d]).join("・")}</div>
+                    <div style={{ fontWeight:400, fontSize:15, color:"var(--text)" }}>{p.name}</div>
+                    <div style={{ fontSize:11, color:"var(--text3)", marginTop:2, letterSpacing:"0.03em" }}>{p.workDays.map(d => DAYS[d]).join(" · ")}</div>
                   </div>
                   <div style={{ display:"flex", gap:6 }}>
-                    <button onClick={() => toggleAbsent(p.id)} style={{ background:status==="absent"?"rgba(148,163,184,0.2)":"rgba(255,255,255,0.05)", border:`1px solid ${status==="absent"?"#94a3b8":"rgba(255,255,255,0.1)"}`, borderRadius:8, padding:"4px 10px", fontSize:12, color:"#94a3b8" }}>休假</button>
-                    <button onClick={() => cycleStatus(p.id)} style={{ width:76, height:34, borderRadius:10, background:statusBg(status), border:`1.5px solid ${statusColor(status)}`, color:statusColor(status), fontSize:13, fontWeight:700, opacity:status==="absent"?0.4:1 }}>
-                      {statusLabel(status)}
-                    </button>
+                    <button onClick={() => toggleAbsent(p.id)} style={{
+                      background: status==="absent" ? "rgba(58,58,68,0.3)" : "transparent",
+                      border:`1px solid ${status==="absent" ? "rgba(58,58,68,0.8)" : "var(--border)"}`,
+                      borderRadius:7, padding:"5px 11px", fontSize:12,
+                      color: status==="absent" ? "#5a5a6e" : "var(--text3)",
+                      letterSpacing:"0.03em",
+                    }}>休假</button>
+                    <button onClick={() => cycleStatus(p.id)} style={{
+                      width:72, height:32, borderRadius:7,
+                      background: st.bg, border:`1px solid ${st.border}`,
+                      color: st.color, fontSize:12, fontWeight:400,
+                      opacity: status==="absent" ? 0.3 : 1,
+                      letterSpacing:"0.03em",
+                    }}>{st.label}</button>
                   </div>
                 </div>
                 {status !== "absent" && status !== "skip" && (
                   <div style={{ display:"flex", gap:8 }}>
-                    <input className="inp" placeholder={typePlaceholder(activeRound.type)} value={order.item} onChange={e => updateOrder(p.id,"item",e.target.value)} style={{ flex:2, fontSize:14, padding:"8px 12px" }} />
-                    <input className="inp" placeholder="金額" type="number" value={order.amount} onChange={e => updateOrder(p.id,"amount",e.target.value)} style={{ flex:1, fontSize:14, padding:"8px 12px" }} />
+                    <input className="inp" placeholder={typePlaceholder(activeRound.type)} value={order.item} onChange={e => updateOrder(p.id,"item",e.target.value)} style={{ flex:2, padding:"8px 12px", fontSize:13 }} />
+                    <input className="inp" placeholder="金額" type="number" value={order.amount} onChange={e => updateOrder(p.id,"amount",e.target.value)} style={{ flex:1, padding:"8px 12px", fontSize:13 }} />
                   </div>
                 )}
               </div>
@@ -311,102 +364,106 @@ function App() {
           })}
 
           {roundTotal(activeRound) > 0 && (
-            <div style={{ textAlign:"right", fontSize:14, color:"#f97316", fontWeight:700, marginBottom:12 }}>
-              總計：${roundTotal(activeRound)}
+            <div style={{ textAlign:"right", fontSize:13, color:"var(--text2)", marginBottom:12, letterSpacing:"0.05em" }}>
+              合計 $ {roundTotal(activeRound)}
             </div>
           )}
 
-          <button onClick={saveRound} style={{ width:"100%", padding:16, marginBottom:16, background:"linear-gradient(135deg,#22c55e,#16a34a)", color:"#fff", fontSize:16, fontWeight:700, borderRadius:14, boxShadow:"0 4px 20px rgba(34,197,94,0.4)" }}>儲存紀錄</button>
+          <button onClick={saveRound} style={{
+            width:"100%", padding:15, marginBottom:20,
+            background:"var(--bg3)",
+            border:"1px solid rgba(107,143,113,0.35)",
+            color:"#6b8f71", fontSize:14, fontWeight:400,
+            borderRadius:10, letterSpacing:"0.08em",
+            boxShadow:"inset 0 1px 0 rgba(255,255,255,0.03)",
+          }}>儲存紀錄</button>
         </div>
       )}
 
       {/* ── ROUND DETAIL ── */}
       {view === "roundDetail" && activeRound && (
-        <div style={{ padding:"0 16px" }}>
-          <div style={{ paddingTop:52, paddingBottom:16, display:"flex", alignItems:"center", gap:12 }}>
-            <button onClick={() => setView("home")} style={{ background:"rgba(255,255,255,0.08)", borderRadius:999, width:36, height:36, color:"#e2e8f0", fontSize:18 }}>‹</button>
+        <div style={{ padding:"0 18px" }}>
+          <div style={{ paddingTop:52, paddingBottom:20, display:"flex", alignItems:"center", gap:14 }}>
+            <button onClick={() => setView("home")} style={{ background:"var(--bg3)", border:"1px solid var(--border)", borderRadius:999, width:34, height:34, color:"var(--text2)", fontSize:16 }}>‹</button>
             <div style={{ flex:1 }}>
-              <div style={{ fontSize:12, color:"#64748b" }}>{activeRound.dayLabel} · {typeLabel(activeRound.type)}</div>
-              <h2 style={{ fontSize:20, fontWeight:700 }}>{activeRound.shopName || activeRound.date}</h2>
-              {activeRound.shopName && <div style={{ fontSize:12, color:"#64748b" }}>{activeRound.date}</div>}
+              <div style={{ fontSize:11, color:"var(--text3)", letterSpacing:"0.05em" }}>{activeRound.dayLabel} · {typeLabel(activeRound.type)}</div>
+              <h2 style={{ fontSize:18, fontWeight:400, color:"var(--text)" }}>{activeRound.shopName || activeRound.date}</h2>
+              {activeRound.shopName && <div style={{ fontSize:11, color:"var(--text3)" }}>{activeRound.date}</div>}
             </div>
-            <button onClick={() => deleteRound(activeRound.id)} style={{ background:"rgba(239,68,68,0.1)", border:"1px solid rgba(239,68,68,0.3)", borderRadius:8, padding:"6px 12px", color:"#f87171", fontSize:12 }}>刪除</button>
+            <button onClick={() => deleteRound(activeRound.id)} style={{ background:"transparent", border:"1px solid rgba(120,60,60,0.4)", borderRadius:7, padding:"5px 12px", color:"rgba(180,90,90,0.7)", fontSize:12, letterSpacing:"0.03em" }}>刪除</button>
           </div>
 
-          {activeRound.note && (
-            <div className="card" style={{ padding:"10px 14px", marginBottom:12, fontSize:13, color:"#94a3b8" }}>
-              📝 {activeRound.note}
-            </div>
-          )}
-
           {activeRound.image && (
-            <img src={activeRound.image} onClick={() => setImgZoom(activeRound.image)} style={{ width:"100%", maxHeight:180, objectFit:"cover", borderRadius:14, marginBottom:14, cursor:"pointer" }} />
+            <img src={activeRound.image} onClick={() => setImgZoom(activeRound.image)} style={{ width:"100%", maxHeight:160, objectFit:"cover", borderRadius:10, marginBottom:14, cursor:"pointer", opacity:0.85 }} />
           )}
 
-          <div style={{ fontSize:12, color:"#64748b", marginBottom:10 }}>點一下循環切換狀態</div>
+          <div style={{ fontSize:11, color:"var(--text3)", letterSpacing:"0.05em", marginBottom:10 }}>點一下循環切換狀態</div>
           {people.map(p => {
             const status = activeRound.payments[p.id] || "absent";
             const order = activeRound.orders?.[p.id];
+            const st = STATUS[status];
             return (
-              <div key={p.id} className="card" onClick={() => cycleRoundPayment(p.id)} style={{ padding:"14px 16px", marginBottom:10, cursor:"pointer" }}>
+              <div key={p.id} className="card" onClick={() => cycleRoundPayment(p.id)} style={{ padding:"14px 16px", marginBottom:8, cursor:"pointer" }}>
                 <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
                   <div>
-                    <div style={{ fontWeight:600, fontSize:16 }}>{p.name}</div>
+                    <div style={{ fontWeight:400, fontSize:15, color:"var(--text)" }}>{p.name}</div>
                     {order && order.item && status !== "skip" && status !== "absent" && (
-                      <div style={{ fontSize:12, color:"#94a3b8", marginTop:2 }}>{order.item}{order.amount ? ` · $${order.amount}` : ""}</div>
+                      <div style={{ fontSize:12, color:"var(--text2)", marginTop:2, letterSpacing:"0.02em" }}>
+                        {order.item}{order.amount ? <span style={{ color:"var(--text3)" }}> · $ {order.amount}</span> : ""}
+                      </div>
                     )}
                   </div>
-                  <div style={{ padding:"5px 14px", borderRadius:999, background:statusBg(status), border:`1.5px solid ${statusColor(status)}`, color:statusColor(status), fontSize:13, fontWeight:700 }}>
-                    {statusLabel(status)}
+                  <div style={{ padding:"4px 14px", borderRadius:999, background:st.bg, border:`1px solid ${st.border}`, color:st.color, fontSize:12, letterSpacing:"0.05em" }}>
+                    {st.label}
                   </div>
                 </div>
               </div>
             );
           })}
           {roundTotal(activeRound) > 0 && (
-            <div style={{ textAlign:"right", fontSize:14, color:"#f97316", fontWeight:700, marginTop:4, marginBottom:16 }}>總計：${roundTotal(activeRound)}</div>
+            <div style={{ textAlign:"right", fontSize:13, color:"var(--text2)", marginTop:8, marginBottom:16, letterSpacing:"0.05em" }}>合計 $ {roundTotal(activeRound)}</div>
           )}
         </div>
       )}
 
       {/* ── MANAGE ── */}
       {view === "manage" && (
-        <div style={{ padding:"0 16px" }}>
-          <div style={{ paddingTop:52, paddingBottom:20, display:"flex", alignItems:"center", gap:12 }}>
-            <button onClick={() => setView("home")} style={{ background:"rgba(255,255,255,0.08)", borderRadius:999, width:36, height:36, color:"#e2e8f0", fontSize:18 }}>‹</button>
-            <h2 style={{ fontSize:20, fontWeight:700 }}>管理同事</h2>
+        <div style={{ padding:"0 18px" }}>
+          <div style={{ paddingTop:52, paddingBottom:20, display:"flex", alignItems:"center", gap:14 }}>
+            <button onClick={() => setView("home")} style={{ background:"var(--bg3)", border:"1px solid var(--border)", borderRadius:999, width:34, height:34, color:"var(--text2)", fontSize:16 }}>‹</button>
+            <h2 style={{ fontSize:18, fontWeight:400, color:"var(--text)", letterSpacing:"0.03em" }}>同事名單</h2>
           </div>
           {people.map(p => (
-            <div key={p.id} className="card" onClick={() => setEditPerson({...p})} style={{ padding:"14px 16px", marginBottom:10, cursor:"pointer" }}>
+            <div key={p.id} className="card" onClick={() => setEditPerson({...p})} style={{ padding:"14px 16px", marginBottom:8, cursor:"pointer" }}>
               <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
                 <div>
-                  <div style={{ fontWeight:700, fontSize:16 }}>{p.name}</div>
-                  <div style={{ fontSize:12, color:"#94a3b8", marginTop:4 }}>上班日：{p.workDays.map(d => "週"+DAYS[d]).join("、")}</div>
+                  <div style={{ fontWeight:400, fontSize:15, color:"var(--text)" }}>{p.name}</div>
+                  <div style={{ fontSize:11, color:"var(--text3)", marginTop:3, letterSpacing:"0.03em" }}>{p.workDays.map(d => "週"+DAYS[d]).join("　")}</div>
                 </div>
-                <div style={{ color:"#64748b", fontSize:18 }}>›</div>
+                <div style={{ color:"var(--text3)", fontSize:16 }}>›</div>
               </div>
             </div>
           ))}
-          <button onClick={() => setShowAddPerson(true)} style={{ width:"100%", padding:14, marginTop:8, background:"rgba(255,255,255,0.06)", border:"1.5px dashed rgba(255,255,255,0.2)", color:"#94a3b8", fontSize:15, borderRadius:14 }}>＋ 新增同事</button>
+          <button onClick={() => setShowAddPerson(true)} style={{ width:"100%", padding:13, marginTop:8, background:"transparent", border:"1px dashed var(--border2)", color:"var(--text3)", fontSize:13, borderRadius:10, letterSpacing:"0.05em" }}>＋ 新增同事</button>
         </div>
       )}
 
       {/* Edit Person Modal */}
       {editPerson && (
-        <div onClick={() => setEditPerson(null)} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.7)", zIndex:100, display:"flex", alignItems:"flex-end" }}>
-          <div onClick={e => e.stopPropagation()} style={{ width:"100%", background:"#1e293b", borderRadius:"20px 20px 0 0", padding:"24px 20px 40px" }}>
-            <div style={{ fontWeight:700, fontSize:18, marginBottom:20 }}>編輯 {editPerson.name}</div>
+        <div onClick={() => setEditPerson(null)} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.8)", zIndex:100, display:"flex", alignItems:"flex-end" }}>
+          <div onClick={e => e.stopPropagation()} style={{ width:"100%", background:"var(--bg3)", borderRadius:"16px 16px 0 0", padding:"24px 20px 44px", border:"1px solid var(--border)" }}>
+            <div style={{ fontWeight:400, fontSize:16, marginBottom:20, color:"var(--text)", letterSpacing:"0.03em" }}>{editPerson.name}</div>
             <input value={editPerson.name} onChange={e => setEditPerson({...editPerson, name:e.target.value})} className="inp" style={{ marginBottom:16 }} placeholder="姓名" />
-            <div style={{ fontSize:13, color:"#64748b", marginBottom:10 }}>上班日</div>
+            <div className="label">上班日</div>
             <div style={{ display:"flex", gap:8, marginBottom:24 }}>
               {DAYS.map((d,i) => {
                 const active = editPerson.workDays.includes(i);
-                return <div key={i} className="day-chip" style={{ background:active?"#f97316":"rgba(255,255,255,0.07)", color:active?"#fff":"#64748b", border:active?"2px solid #f97316":"2px solid transparent" }} onClick={() => setEditPerson(ep => ({...ep, workDays:active?ep.workDays.filter(x=>x!==i):[...ep.workDays,i].sort()}))}>{d}</div>;
+                return <div key={i} className="day-chip" style={{ background:active?"rgba(124,158,166,0.2)":"var(--bg2)", color:active?"#7c9ea6":"var(--text3)", border:active?"1px solid rgba(124,158,166,0.4)":"1px solid var(--border)" }} onClick={() => setEditPerson(ep => ({...ep, workDays:active?ep.workDays.filter(x=>x!==i):[...ep.workDays,i].sort()}))}>{d}</div>;
               })}
             </div>
             <div style={{ display:"flex", gap:10 }}>
-              <button onClick={() => deletePerson(editPerson.id)} style={{ flex:1, padding:14, borderRadius:12, background:"rgba(239,68,68,0.15)", border:"1px solid rgba(239,68,68,0.3)", color:"#f87171", fontSize:15 }}>刪除</button>
-              <button onClick={savePerson} style={{ flex:2, padding:14, borderRadius:12, background:"#f97316", color:"#fff", fontSize:15, fontWeight:700 }}>儲存</button>
+              <button onClick={() => deletePerson(editPerson.id)} style={{ flex:1, padding:13, borderRadius:9, background:"transparent", border:"1px solid rgba(120,60,60,0.35)", color:"rgba(180,90,90,0.7)", fontSize:13 }}>刪除</button>
+              <button onClick={savePerson} style={{ flex:2, padding:13, borderRadius:9, background:"var(--bg2)", border:"1px solid rgba(124,158,166,0.3)", color:"#7c9ea6", fontSize:13, letterSpacing:"0.05em" }}>儲存</button>
             </div>
           </div>
         </div>
@@ -414,27 +471,35 @@ function App() {
 
       {/* Add Person Modal */}
       {showAddPerson && (
-        <div onClick={() => setShowAddPerson(false)} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.7)", zIndex:100, display:"flex", alignItems:"flex-end" }}>
-          <div onClick={e => e.stopPropagation()} style={{ width:"100%", background:"#1e293b", borderRadius:"20px 20px 0 0", padding:"24px 20px 40px" }}>
-            <div style={{ fontWeight:700, fontSize:18, marginBottom:20 }}>新增同事</div>
+        <div onClick={() => setShowAddPerson(false)} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.8)", zIndex:100, display:"flex", alignItems:"flex-end" }}>
+          <div onClick={e => e.stopPropagation()} style={{ width:"100%", background:"var(--bg3)", borderRadius:"16px 16px 0 0", padding:"24px 20px 44px", border:"1px solid var(--border)" }}>
+            <div style={{ fontWeight:400, fontSize:16, marginBottom:20, color:"var(--text)", letterSpacing:"0.03em" }}>新增同事</div>
             <input value={newName} onChange={e => setNewName(e.target.value)} className="inp" style={{ marginBottom:16 }} placeholder="姓名" />
-            <div style={{ fontSize:13, color:"#64748b", marginBottom:10 }}>上班日</div>
+            <div className="label">上班日</div>
             <div style={{ display:"flex", gap:8, marginBottom:24 }}>
               {DAYS.map((d,i) => {
                 const active = newWorkDays.includes(i);
-                return <div key={i} className="day-chip" style={{ background:active?"#f97316":"rgba(255,255,255,0.07)", color:active?"#fff":"#64748b", border:active?"2px solid #f97316":"2px solid transparent" }} onClick={() => setNewWorkDays(ds => active?ds.filter(x=>x!==i):[...ds,i].sort())}>{d}</div>;
+                return <div key={i} className="day-chip" style={{ background:active?"rgba(124,158,166,0.2)":"var(--bg2)", color:active?"#7c9ea6":"var(--text3)", border:active?"1px solid rgba(124,158,166,0.4)":"1px solid var(--border)" }} onClick={() => setNewWorkDays(ds => active?ds.filter(x=>x!==i):[...ds,i].sort())}>{d}</div>;
               })}
             </div>
-            <button onClick={addPerson} style={{ width:"100%", padding:14, borderRadius:12, background:"#f97316", color:"#fff", fontSize:15, fontWeight:700 }}>新增</button>
+            <button onClick={addPerson} style={{ width:"100%", padding:13, borderRadius:9, background:"var(--bg2)", border:"1px solid rgba(124,158,166,0.3)", color:"#7c9ea6", fontSize:13, letterSpacing:"0.05em" }}>新增</button>
           </div>
         </div>
       )}
 
       {/* Bottom Nav */}
-      <div style={{ position:"fixed", bottom:0, left:0, right:0, background:"rgba(15,23,42,0.95)", backdropFilter:"blur(12px)", borderTop:"1px solid rgba(255,255,255,0.08)", display:"flex" }}>
-        {[{id:"home",label:"紀錄",icon:"📋"},{id:"manage",label:"同事",icon:"👥"}].map(tab => (
-          <button key={tab.id} onClick={() => setView(tab.id)} style={{ flex:1, padding:"12px 0 16px", background:"none", color:view===tab.id?"#f97316":"#475569", fontSize:10, fontWeight:700, letterSpacing:1, display:"flex", flexDirection:"column", alignItems:"center", gap:2, borderTop:`2px solid ${view===tab.id?"#f97316":"transparent"}`, transition:"color .15s" }}>
-            <span style={{ fontSize:22 }}>{tab.icon}</span>{tab.label}
+      <div style={{ position:"fixed", bottom:0, left:0, right:0, background:"rgba(10,10,12,0.97)", borderTop:"1px solid var(--border)", display:"flex", backdropFilter:"blur(12px)" }}>
+        {[{id:"home",label:"紀錄",icon:"▤"},{id:"manage",label:"同事",icon:"◎"}].map(tab => (
+          <button key={tab.id} onClick={() => setView(tab.id)} style={{
+            flex:1, padding:"13px 0 18px", background:"none",
+            color: view===tab.id ? "#7c9ea6" : "var(--text3)",
+            fontSize:9, fontWeight:400, letterSpacing:"0.12em", textTransform:"uppercase",
+            display:"flex", flexDirection:"column", alignItems:"center", gap:4,
+            borderTop:`1px solid ${view===tab.id ? "rgba(124,158,166,0.4)" : "transparent"}`,
+            transition:"color .2s",
+          }}>
+            <span style={{ fontSize:18 }}>{tab.icon}</span>
+            {tab.label}
           </button>
         ))}
       </div>
