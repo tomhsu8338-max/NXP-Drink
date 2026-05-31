@@ -103,8 +103,8 @@ function App() {
   const [imgZoom, setImgZoom] = useState(null);
   const fileRef = useRef();
 
-  useEffect(() => { localStorage.setItem("nxp_people", JSON.stringify(people)); }, [people]);
-  useEffect(() => { localStorage.setItem("nxp_rounds", JSON.stringify(rounds)); }, [rounds]);
+  useEffect(() => { try { localStorage.setItem("nxp_people", JSON.stringify(people)); } catch(e) {} }, [people]);
+  useEffect(() => { try { localStorage.setItem("nxp_rounds", JSON.stringify(rounds)); } catch(e) {} }, [rounds]);
 
   function showToast(msg) { setToast(msg); setTimeout(() => setToast(""), 1800); }
   function todayIdx() { const d = new Date().getDay(); return d === 0 ? 6 : d - 1; }
@@ -150,7 +150,24 @@ function App() {
     });
   }
 
-  function saveRound() { setRounds(rs => [activeRound, ...rs]); showToast("已儲存"); setView("home"); setActiveRound(null); }
+  function saveRound() {
+    // compress image if too large
+    let round = activeRound;
+    if (round.image && round.image.length > 300000) {
+      const canvas = document.createElement("canvas");
+      const img = new Image();
+      img.src = round.image;
+      canvas.width = 800;
+      canvas.height = Math.round(img.height * (800 / img.width));
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      round = { ...round, image: canvas.toDataURL("image/jpeg", 0.5) };
+    }
+    setRounds(rs => [round, ...rs]);
+    showToast("已儲存");
+    setView("home");
+    setActiveRound(null);
+  }
   function openRound(round) { setActiveRound(round); setView("roundDetail"); }
 
   function cycleRoundPayment(pid) {
@@ -301,7 +318,7 @@ function App() {
           </div>
 
           {/* Shop name */}
-          <div className="card" style={{ padding:"14px 16px", marginBottom:12 }}>
+          <div className="card" style={{ padding:"14px 16px", marginBottom:12, marginTop:8 }}>
             <div className="label">店名（選填）</div>
             <input className="inp" placeholder={typeShopPlaceholder(activeRound.type)} value={activeRound.shopName} onChange={e => setActiveRound(r => ({...r, shopName:e.target.value}))} />
           </div>
