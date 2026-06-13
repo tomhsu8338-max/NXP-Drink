@@ -97,6 +97,7 @@ function App() {
   const [newWorkDays, setNewWorkDays] = useState([0,1,2,3,4]);
   const [toast, setToast] = useState("");
   const [showAddPerson, setShowAddPerson] = useState(false);
+  const [debtPerson, setDebtPerson] = useState(null); // person id whose unpaid items are shown
   const [imgZoom, setImgZoom] = useState(null);
   const fileRef = useRef();
 
@@ -190,6 +191,22 @@ function App() {
     setIsEditing(false);
   }
 
+  function markPersonPaid(personId, roundId) {
+    setRounds(rs => rs.map(r => {
+      if (roundId && r.id !== roundId) return r;
+      if (r.payments[personId] !== "unpaid") return r;
+      return { ...r, payments: { ...r.payments, [personId]: "paid" } };
+    }));
+  }
+  function markAllPaidForPerson(personId) {
+    setRounds(rs => rs.map(r => {
+      if (r.payments[personId] !== "unpaid") return r;
+      return { ...r, payments: { ...r.payments, [personId]: "paid" } };
+    }));
+    showToast("已全部標記已付");
+    setDebtPerson(null);
+  }
+
   function cycleRoundPayment(pid) {
     setActiveRound(r => {
       const cur = r.payments[pid];
@@ -249,7 +266,7 @@ function App() {
                 <div className="label">待收款</div>
                 <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
                   {people.filter(p => unpaidCounts[p.id] > 0).map(p => (
-                    <div key={p.id} style={{ background:"rgba(160,120,80,0.1)", border:"1px solid rgba(160,120,80,0.25)", borderRadius:6, padding:"3px 10px", fontSize:13, color:"#a07850" }}>
+                    <div key={p.id} onClick={() => setDebtPerson(p.id)} style={{ background:"rgba(160,120,80,0.1)", border:"1px solid rgba(160,120,80,0.25)", borderRadius:6, padding:"3px 10px", fontSize:13, color:"#a07850", cursor:"pointer" }}>
                       {p.name} <span style={{ opacity:0.7 }}>×{unpaidCounts[p.id]}</span>
                     </div>
                   ))}
@@ -447,6 +464,41 @@ function App() {
           </div>
         </div>
       )}
+
+      {/* Debt Detail Modal */}
+      {debtPerson && (() => {
+        const person = people.find(p => p.id === debtPerson);
+        const unpaidRounds = rounds.filter(r => r.payments[debtPerson] === "unpaid");
+        const total = unpaidRounds.reduce((sum, r) => sum + (parseFloat(r.orders?.[debtPerson]?.amount) || 0), 0);
+        return (
+          <div onClick={() => setDebtPerson(null)} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.8)", zIndex:100, display:"flex", alignItems:"flex-end" }}>
+            <div onClick={e => e.stopPropagation()} style={{ width:"100%", maxHeight:"80vh", overflowY:"auto", background:"var(--bg3)", borderRadius:"16px 16px 0 0", padding:"24px 20px 32px", border:"1px solid var(--border)" }}>
+              <div style={{ fontWeight:400, fontSize:16, marginBottom:4, color:"var(--text)" }}>{person?.name}</div>
+              <div style={{ fontSize:12, color:"var(--text3)", marginBottom:18 }}>共 {unpaidRounds.length} 筆未付・合計 $ {total}</div>
+              {unpaidRounds.map(r => {
+                const order = r.orders?.[debtPerson] || {};
+                return (
+                  <div key={r.id} className="card" style={{ padding:"12px 14px", marginBottom:8, display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+                    <div>
+                      <div style={{ fontSize:13, color:"var(--text)" }}>
+                        <span style={{ fontSize:10, color: r.type==="drink" ? "#7c9ea6" : "#8a8fa8", marginRight:6, letterSpacing:"0.05em" }}>{r.type==="drink"?"飲料":"食物"}</span>
+                        {r.shopName || r.date}
+                      </div>
+                      <div style={{ fontSize:11, color:"var(--text3)", marginTop:3 }}>
+                        {r.date} {r.dayLabel}
+                        {order.item && <span> · {order.item}</span>}
+                        {order.amount && <span> · $ {order.amount}</span>}
+                      </div>
+                    </div>
+                    <button onClick={() => markPersonPaid(debtPerson, r.id)} style={{ background:"transparent", border:"1px solid rgba(107,143,113,0.35)", color:"#6b8f71", fontSize:12, borderRadius:7, padding:"6px 12px", flexShrink:0, marginLeft:10 }}>標記已付</button>
+                  </div>
+                );
+              })}
+              <button onClick={() => markAllPaidForPerson(debtPerson)} style={{ width:"100%", padding:13, marginTop:8, borderRadius:9, background:"var(--bg2)", border:"1px solid rgba(107,143,113,0.35)", color:"#6b8f71", fontSize:13, letterSpacing:"0.05em" }}>全部標記已付</button>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Bottom Nav */}
       <div style={{ position:"fixed", bottom:0, left:0, right:0, background:"rgba(17,17,20,0.97)", borderTop:"1px solid var(--border)", display:"flex", backdropFilter:"blur(12px)", paddingBottom:"env(safe-area-inset-bottom, 0px)" }}>
