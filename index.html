@@ -20,8 +20,10 @@
       --header-h: calc(env(safe-area-inset-top, 44px) + 60px);
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body, #root { height: 100%; background: var(--bg); }
-    body { font-family: 'Noto Sans TC', sans-serif; color: var(--text); font-weight: 300; letter-spacing: 0.02em; overflow-x: hidden; }
+    html { height: 100%; background: var(--bg); overflow: hidden; }
+    body { height: 100%; background: var(--bg); overflow: hidden; position: fixed; inset: 0; width: 100%; font-family: 'Noto Sans TC', sans-serif; color: var(--text); font-weight: 300; letter-spacing: 0.02em; }
+    #root { height: 100%; }
+    .scroll-area { position: absolute; inset: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior-y: contain; }
     button { cursor: pointer; border: none; outline: none; font-family: inherit; font-weight: 300; letter-spacing: 0.03em; }
     input { font-family: inherit; font-weight: 300; }
     .card { background: var(--bg3); border: 1px solid var(--border); border-radius: 12px; }
@@ -112,18 +114,35 @@ function App() {
 
   function showToast(msg) { setToast(msg); setTimeout(() => setToast(""), 1800); }
   function todayIdx() { const d = new Date().getDay(); return d === 0 ? 6 : d - 1; }
+  function dayIdxFromDate(d) { const wd = d.getDay(); return wd === 0 ? 6 : wd - 1; }
+  function toISODate(d) { const y=d.getFullYear(); const m=String(d.getMonth()+1).padStart(2,"0"); const day=String(d.getDate()).padStart(2,"0"); return `${y}-${m}-${day}`; }
 
   function makeRound(type) {
+    const now = new Date();
     const today = todayIdx();
     const present = people.filter(p => p.workDays.includes(today));
     return {
       id: randomId(), type,
-      date: new Date().toLocaleDateString("zh-TW"),
+      isoDate: toISODate(now),
+      date: now.toLocaleDateString("zh-TW"),
       dayLabel: "週" + DAYS[today],
       image: null, shopName: "",
       orders: Object.fromEntries(people.map(p => [p.id, { item:"", amount:"" }])),
       payments: Object.fromEntries(people.map(p => [p.id, present.some(x => x.id === p.id) ? "unpaid" : "absent"])),
     };
+  }
+
+  function updateRoundDate(isoStr) {
+    if (!isoStr) return;
+    const [y,m,d] = isoStr.split("-").map(Number);
+    const dateObj = new Date(y, m-1, d);
+    const idx = dayIdxFromDate(dateObj);
+    setActiveRound(r => ({
+      ...r,
+      isoDate: isoStr,
+      date: dateObj.toLocaleDateString("zh-TW"),
+      dayLabel: "週" + DAYS[idx],
+    }));
   }
 
   function startRound(type) { setActiveRound(makeRound(type)); setIsEditing(false); setView("newRound"); }
@@ -136,7 +155,13 @@ function App() {
       if (!orders[p.id]) orders[p.id] = { item:"", amount:"" };
       if (!payments[p.id]) payments[p.id] = "absent";
     });
-    setActiveRound({ ...round, orders, payments });
+    // backfill isoDate for older rounds that predate this field
+    let isoDate = round.isoDate;
+    if (!isoDate && round.date) {
+      const parts = round.date.split("/").map(Number);
+      if (parts.length === 3) isoDate = toISODate(new Date(parts[0], parts[1]-1, parts[2]));
+    }
+    setActiveRound({ ...round, orders, payments, isoDate });
     setIsEditing(true);
     setView("newRound");
   }
@@ -244,7 +269,7 @@ function App() {
   const typeShopPlaceholder = t => t === "drink" ? "例：50嵐、茶湯會" : "例：便當店、麥當勞";
 
   return (
-    <div style={{ minHeight:"100vh", background:"var(--bg)" }}>
+    <div style={{ position:"fixed", inset:0, background:"var(--bg)" }}>
 
       {toast && <div style={{ position:"fixed", top:24, left:"50%", transform:"translateX(-50%)", background:"var(--bg3)", border:"1px solid var(--border2)", padding:"9px 22px", borderRadius:999, fontSize:13, zIndex:999, whiteSpace:"nowrap", color:"var(--text)", letterSpacing:"0.05em" }}>{toast}</div>}
       {imgZoom && <div onClick={() => setImgZoom(null)} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.95)", zIndex:200, display:"flex", alignItems:"center", justifyContent:"center", padding:16 }}><img src={imgZoom} style={{ maxWidth:"100%", maxHeight:"90vh", borderRadius:8 }} /></div>}
@@ -260,7 +285,7 @@ function App() {
               <span style={{ color:"var(--text)", fontWeight:300, letterSpacing:"0.06em" }}> 中班吃吃喝喝</span>
             </h1>
           </div>
-          <div className="page">
+          <div className="scroll-area"><div className="page">
             {people.some(p => unpaidCounts[p.id] > 0) && (
               <div className="card" style={{ padding:"14px 16px", marginBottom:20 }}>
                 <div className="label">待收款</div>
@@ -318,7 +343,18 @@ function App() {
               <h2 style={{ fontSize:18, fontWeight:400, color:"var(--text)", letterSpacing:"0.03em" }}>{typeEmoji(activeRound.type)} {isEditing ? "編輯" : ""}{typeLabel(activeRound.type)}單</h2>
             </div>
           </div>
-          <div className="page">
+          <div className="scroll-area"><div className="page">
+            <div className="card" style={{ padding:"14px 16px", marginBottom:12 }}>
+              <div className="label">日期</div>
+              <input
+                type="date"
+                className="inp"
+                value={activeRound.isoDate || ""}
+                onChange={e => updateRoundDate(e.target.value)}
+                style={{ colorScheme:"dark" }}
+              />
+              <div style={{ fontSize:11, color:"var(--text3)", marginTop:6 }}>{activeRound.dayLabel}</div>
+            </div>
             <div className="card" style={{ padding:"14px 16px", marginBottom:12 }}>
               <div className="label">店名（選填）</div>
               <input className="inp" placeholder={typeShopPlaceholder(activeRound.type)} value={activeRound.shopName} onChange={e => setActiveRound(r => ({...r, shopName:e.target.value}))} />
@@ -382,7 +418,7 @@ function App() {
             <button onClick={() => editRound(activeRound)} style={{ background:"transparent", border:"1px solid rgba(124,158,166,0.3)", borderRadius:7, padding:"5px 12px", color:"#7c9ea6", fontSize:12, marginRight:6 }}>編輯</button>
             <button onClick={() => deleteRound(activeRound.id)} style={{ background:"transparent", border:"1px solid rgba(120,60,60,0.4)", borderRadius:7, padding:"5px 12px", color:"rgba(180,90,90,0.7)", fontSize:12 }}>刪除</button>
           </div>
-          <div className="page">
+          <div className="scroll-area"><div className="page">
             {activeRound.image && <img src={activeRound.image} onClick={() => setImgZoom(activeRound.image)} style={{ width:"100%", maxHeight:160, objectFit:"cover", borderRadius:10, marginBottom:14, cursor:"pointer", opacity:0.85 }} />}
             <div style={{ fontSize:11, color:"var(--text3)", letterSpacing:"0.05em", marginBottom:10 }}>點一下循環切換狀態</div>
             {people.map(p => {
@@ -415,7 +451,7 @@ function App() {
             <button onClick={() => setView("home")} style={{ background:"var(--bg3)", border:"1px solid var(--border)", borderRadius:999, width:34, height:34, color:"var(--text2)", fontSize:16, flexShrink:0 }}>‹</button>
             <h2 style={{ fontSize:18, fontWeight:400, color:"var(--text)", letterSpacing:"0.03em" }}>同事名單</h2>
           </div>
-          <div className="page">
+          <div className="scroll-area"><div className="page">
             {people.map(p => (
               <div key={p.id} className="card" onClick={() => setEditPerson({...p})} style={{ padding:"14px 16px", marginBottom:8, cursor:"pointer" }}>
                 <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
