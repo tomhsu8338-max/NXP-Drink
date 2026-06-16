@@ -411,7 +411,7 @@ function App() {
             <div style={{ fontSize:11, color:"var(--text3)", letterSpacing:"0.05em", marginBottom:10 }}>點狀態循環切換：未付 → 已付 → 不點</div>
             {people.map(p => {
               const status = activeRound.payments[p.id] || "absent";
-              const order = activeRound.orders?.[p.id] || { item:"", amount:"" };
+              const order = (activeRound.orders && activeRound.orders[p.id]) || { item:"", amount:"" };
               const st = STATUS[status];
               return (
                 <div key={p.id} className="card" style={{ padding:"14px 16px", marginBottom:8 }}>
@@ -461,7 +461,7 @@ function App() {
             <div style={{ fontSize:11, color:"var(--text3)", letterSpacing:"0.05em", marginBottom:10 }}>點一下循環切換狀態</div>
             {people.map(p => {
               const status = activeRound.payments[p.id] || "absent";
-              const order = activeRound.orders?.[p.id];
+              const order = (activeRound.orders && activeRound.orders[p.id]);
               const st = STATUS[status];
               return (
                 <div key={p.id} className="card" onClick={() => cycleRoundPayment(p.id)} style={{ padding:"14px 16px", marginBottom:8, cursor:"pointer" }}>
@@ -545,14 +545,14 @@ function App() {
       {debtPerson && (() => {
         const person = people.find(p => p.id === debtPerson);
         const unpaidRounds = rounds.filter(r => r.payments[debtPerson] === "unpaid");
-        const total = unpaidRounds.reduce((sum, r) => sum + (parseFloat(r.orders?.[debtPerson]?.amount) || 0), 0);
+        const total = unpaidRounds.reduce((sum, r) => sum + (parseFloat((r.orders && r.orders[debtPerson] && r.orders[debtPerson].amount) || 0) || 0), 0);
         return (
           <div onClick={() => setDebtPerson(null)} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.8)", zIndex:100, display:"flex", alignItems:"flex-end" }}>
             <div onClick={e => e.stopPropagation()} style={{ width:"100%", maxHeight:"80vh", overflowY:"auto", background:"var(--bg3)", borderRadius:"16px 16px 0 0", padding:"24px 20px 32px", border:"1px solid var(--border)" }}>
-              <div style={{ fontWeight:400, fontSize:16, marginBottom:4, color:"var(--text)" }}>{person?.name}</div>
+              <div style={{ fontWeight:400, fontSize:16, marginBottom:4, color:"var(--text)" }}>{person && person.name}</div>
               <div style={{ fontSize:12, color:"var(--text3)", marginBottom:18 }}>共 {unpaidRounds.length} 筆未付・合計 $ {total}</div>
               {unpaidRounds.map(r => {
-                const order = r.orders?.[debtPerson] || {};
+                const order = (r.orders && r.orders[debtPerson]) || {};
                 return (
                   <div key={r.id} className="card" style={{ padding:"12px 14px", marginBottom:8, display:"flex", alignItems:"center", justifyContent:"space-between" }}>
                     <div>
