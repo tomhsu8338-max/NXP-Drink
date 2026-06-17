@@ -37,6 +37,8 @@ input { font-family: inherit; font-weight: 300; }
 .inp { width: 100%; background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; color: var(--text); font-size: 14px; font-family: inherit; font-weight: 300; letter-spacing: 0.02em; }
 .inp::placeholder { color: var(--text3); }
 .inp:focus { outline: none; border-color: var(--border2); }
+input[type="date"] { -webkit-appearance: none; appearance: none; }
+input[type="date"]::-webkit-date-and-time-value { text-align: left; }
 button:active { opacity: 0.7; }
 .label { font-size: 11px; color: var(--text2); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 8px; }
 .header { position: fixed; top: 0; left: 0; right: 0; z-index: 50; background: var(--bg); border-bottom: 1px solid var(--border); padding-top: var(--safe-top); display: flex; align-items: center; gap: 14px; padding-left: 18px; padding-right: 18px; padding-bottom: 14px; min-height: var(--header-h); }
@@ -546,7 +548,7 @@ function App() {
               className: "inp",
               value: activeRound.isoDate || "",
               onChange: function (e) { updateRoundDate(e.target.value); },
-              style: { colorScheme: "dark" }
+              style: { colorScheme: "dark", width: "100%", maxWidth: "100%", boxSizing: "border-box", overflow: "hidden" }
             }),
             React.createElement("div", { style: { fontSize: 11, color: "var(--text3)", marginTop: 6 } }, activeRound.dayLabel)
           ),
