@@ -160,7 +160,9 @@ function App() {
   }, [people]);
 
   React.useEffect(function () {
-    try { localStorage.setItem("nxp_rounds", JSON.stringify(rounds)); } catch (e) {}
+    try { localStorage.setItem("nxp_rounds", JSON.stringify(rounds)); } catch (e) {
+      showToast("⚠️ 空間不足，請清理舊圖片");
+    }
   }, [rounds]);
 
   React.useEffect(function () {
@@ -279,12 +281,12 @@ function App() {
       var img = new Image();
       img.onload = function () {
         var canvas = document.createElement("canvas");
-        var maxW = 800;
+        var maxW = 400;
         var scale = img.width > maxW ? maxW / img.width : 1;
         canvas.width = Math.round(img.width * scale);
         canvas.height = Math.round(img.height * scale);
         canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
-        var dataUrl = canvas.toDataURL("image/jpeg", 0.6);
+        var dataUrl = canvas.toDataURL("image/jpeg", 0.3);
         setActiveRound(function (r) {
           var copy = Object.assign({}, r);
           copy.image = dataUrl;
