@@ -42,7 +42,7 @@ input[type="date"]::-webkit-date-and-time-value { text-align: left; }
 button:active { opacity: 0.7; }
 .label { font-size: 11px; color: var(--text2); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 8px; }
 .header { position: fixed; top: 0; left: 0; right: 0; z-index: 50; background: var(--bg); border-bottom: 1px solid var(--border); padding-top: var(--safe-top); display: flex; align-items: center; gap: 14px; padding-left: 18px; padding-right: 18px; padding-bottom: 14px; min-height: var(--header-h); }
-.page { padding: 0 18px; padding-top: calc(var(--header-h) + 14px); padding-bottom: 90px; min-height: 100vh; }
+.page { padding: 0 18px; padding-top: calc(var(--header-h) + 14px); padding-bottom: 120px; min-height: 100vh; }
 </style>
 </head>
 <body>
@@ -846,7 +846,7 @@ function App() {
     })() : null,
 
     React.createElement("div", {
-      style: { position: "fixed", bottom: 0, left: 0, right: 0, background: "rgba(17,17,20,0.97)", borderTop: "1px solid var(--border)", display: "flex", backdropFilter: "blur(12px)", paddingBottom: "env(safe-area-inset-bottom, 0px)" }
+      style: { position: "fixed", bottom: 0, left: 0, right: 0, background: "rgba(17,17,20,0.97)", borderTop: "1px solid var(--border)", display: "flex", backdropFilter: "blur(12px)", paddingBottom: "max(env(safe-area-inset-bottom, 0px), 20px)" }
     },
       [{ id: "home", label: "紀錄", icon: "\u25a4" }, { id: "manage", label: "同事", icon: "\u25ce" }].map(function (tab) {
         return React.createElement("button", {
