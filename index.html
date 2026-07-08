@@ -862,7 +862,7 @@ function App() {
     })() : null,
 
     React.createElement("div", {
-      style: { position: "fixed", bottom: 0, left: 0, right: 0, background: "rgba(17,17,20,0.97)", borderTop: "1px solid var(--border)", display: "flex", backdropFilter: "blur(12px)", paddingBottom: "max(env(safe-area-inset-bottom, 0px), 8px)" }
+      style: { position: "fixed", bottom: 0, left: 0, right: 0, background: "rgba(17,17,20,0.97)", borderTop: "1px solid var(--border)", display: "flex", backdropFilter: "blur(12px)", paddingBottom: "env(safe-area-inset-bottom, 34px)" }
     },
       [{ id: "home", label: "紀錄", icon: "\u25a4" }, { id: "manage", label: "同事", icon: "\u25ce" }].map(function (tab) {
         return React.createElement("button", {
