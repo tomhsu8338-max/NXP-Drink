@@ -389,6 +389,18 @@ function App() {
     setDebtPerson(null);
   }
 
+  function clearOldImages() {
+    setRounds(function (rs) {
+      return rs.map(function (r, idx) {
+        if (idx < 5) return r; // keep latest 5 with images
+        var copy = Object.assign({}, r);
+        copy.image = null;
+        return copy;
+      });
+    });
+    showToast("已清理舊圖片，空間釋放完成");
+  }
+
   function addPerson() {
     if (!newName.trim()) return;
     setPeople(function (ps) {
@@ -708,7 +720,11 @@ function App() {
           React.createElement("button", {
             onClick: function () { setShowAddPerson(true); },
             style: { width: "100%", padding: 13, marginTop: 8, background: "transparent", border: "1px dashed var(--border2)", color: "var(--text3)", fontSize: 13, borderRadius: 10 }
-          }, "\uff0b 新增同事")
+          }, "\uff0b 新增同事"),
+          React.createElement("button", {
+            onClick: function () { clearOldImages(); },
+            style: { width: "100%", padding: 13, marginTop: 8, background: "transparent", border: "1px dashed rgba(160,120,80,0.3)", color: "#a07850", fontSize: 13, borderRadius: 10 }
+          }, "\uD83D\uDDD1 清理舊圖片釋放空間")
         )
       )
     ) : null,
@@ -846,7 +862,7 @@ function App() {
     })() : null,
 
     React.createElement("div", {
-      style: { position: "fixed", bottom: 0, left: 0, right: 0, background: "rgba(17,17,20,0.97)", borderTop: "1px solid var(--border)", display: "flex", backdropFilter: "blur(12px)", paddingBottom: "max(env(safe-area-inset-bottom, 0px), 20px)" }
+      style: { position: "fixed", bottom: 0, left: 0, right: 0, background: "rgba(17,17,20,0.97)", borderTop: "1px solid var(--border)", display: "flex", backdropFilter: "blur(12px)", paddingBottom: "max(env(safe-area-inset-bottom, 0px), 8px)" }
     },
       [{ id: "home", label: "紀錄", icon: "\u25a4" }, { id: "manage", label: "同事", icon: "\u25ce" }].map(function (tab) {
         return React.createElement("button", {
