@@ -392,37 +392,24 @@ async function saveRound() {
   try {
     await setDoc(
       doc(db, "rounds", round.id),
-      Object.assign({}, round, {
-        ownerUid: auth.currentUser.uid,
-        updatedAt: serverTimestamp()
-      }),
-      { merge: true }
+      {
+        type: round.type,
+        isoDate: round.isoDate,
+        shopName: round.shopName || "",
+        ownerUid: auth.currentUser.uid
+      }
     );
 
-    console.log("飲料單已寫入 Firestore");
+    alert("已寫入 Firestore");
 
-    if (isEditing) {
-      setRounds(function (rs) {
-        return rs.map(function (x) {
-          return x.id === round.id ? round : x;
-        });
-      });
+    setRounds(function (rs) {
+      return [round].concat(rs);
+    });
 
-      showToast("已更新");
-      setView("roundDetail");
-    } else {
-      setRounds(function (rs) {
-        return [round].concat(rs);
-      });
-
-      showToast("已儲存");
-      setView("home");
-    }
-
-    setIsEditing(false);
+    setView("home");
   } catch (error) {
-    console.error("飲料單寫入失敗:", error);
-    showToast("儲存失敗");
+    alert("失敗：" + error.code);
+    console.error(error);
   }
 }
 
