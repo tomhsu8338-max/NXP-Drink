@@ -1,6 +1,26 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
+  <script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+  import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyCcrwA_CJCsxO5tzZ5eMvuwYPDoA8ePU0Q",
+    authDomain: "nxp-drink.firebaseapp.com",
+    projectId: "nxp-drink",
+    storageBucket: "nxp-drink.firebasestorage.app",
+    messagingSenderId: "811769663669",
+    appId: "1:811769663669:web:b8007e0d709e3dfb212efc"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+
+  signInAnonymously(auth)
+    .then(() => console.log("Firebase anonymous login OK"))
+    .catch((error) => console.error("Firebase login failed:", error));
+</script>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
 <title>NXP 中班吃吃喝喝</title>
