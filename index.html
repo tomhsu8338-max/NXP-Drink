@@ -1,23 +1,18 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-  <script type="module">
+<script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
-  import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
-
-import {
-  getFirestore,
-  doc,
-  setDoc,
-  serverTimestamp
-} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
-    
-    import {
-  getFirestore,
-  doc,
-  setDoc,
-  serverTimestamp
-} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+  import {
+    getAuth,
+    signInAnonymously
+  } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+  import {
+    getFirestore,
+    doc,
+    setDoc,
+    serverTimestamp
+  } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyCcrwA_CJCsxO5tzZ5eMvuwYPDoA8ePU0Q",
@@ -28,34 +23,34 @@ import {
     appId: "1:811769663669:web:b8007e0d709e3dfb212efc"
   };
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
 
-signInAnonymously(auth)
-  .then(async (result) => {
-    const user = result.user;
+  signInAnonymously(auth)
+    .then(async (result) => {
+      const user = result.user;
 
-    console.log("Firebase anonymous login OK");
-    console.log("UID:", user.uid);
+      console.log("Firebase anonymous login OK");
+      console.log("UID:", user.uid);
 
-    await setDoc(
-      doc(db, "users", user.uid),
-      {
-        role: "member",
-        deviceStatus: "new",
-        updatedAt: serverTimestamp()
-      },
-      { merge: true }
-    );
+      await setDoc(
+        doc(db, "users", user.uid),
+        {
+          role: "member",
+          deviceStatus: "new",
+          updatedAt: serverTimestamp()
+        },
+        { merge: true }
+      );
 
-    console.log("users document created");
-  })
-  .catch((error) => {
-    console.error("Firebase login failed:", error);
-  });
-
+      console.log("users document created");
+    })
+    .catch((error) => {
+      console.error("Firebase login failed:", error);
+    });
 </script>
+
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
 <title>NXP 中班吃吃喝喝</title>
