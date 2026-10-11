@@ -34,15 +34,21 @@
       console.log("Firebase anonymous login OK");
       console.log("UID:", user.uid);
 
-      await setDoc(
-        doc(db, "users", user.uid),
-        {
-          role: "member",
-          deviceStatus: "new",
-          updatedAt: serverTimestamp()
-        },
-        { merge: true }
-      );
+      try {
+  await setDoc(
+    doc(db, "users", user.uid),
+    {
+      role: "member",
+      deviceStatus: "new",
+      updatedAt: serverTimestamp()
+    },
+    { merge: true }
+  );
+
+  console.log("users document created");
+} catch (firestoreError) {
+  console.error("Firestore write failed:", firestoreError);
+}
 
       console.log("users document created");
     })
