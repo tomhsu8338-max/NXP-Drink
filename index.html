@@ -27,37 +27,35 @@
   const auth = getAuth(app);
   const db = getFirestore(app);
 
-  signInAnonymously(auth)
+    signInAnonymously(auth)
     .then(async (result) => {
       const user = result.user;
 
-console.log("Firebase anonymous login OK");
-console.log("UID:", user.uid);
-console.log("開始寫入 Firestore");
+      console.log("Firebase anonymous login OK");
+      console.log("UID:", user.uid);
+      console.log("開始寫入 Firestore");
 
-try {
-  await setDoc(
-    doc(db, "users", user.uid),
-    {
-      role: "member",
-      deviceStatus: "new",
-      updatedAt: serverTimestamp()
-    },
-    { merge: true }
-  );
+      try {
+        await setDoc(
+          doc(db, "users", user.uid),
+          {
+            role: "member",
+            deviceStatus: "new",
+            updatedAt: serverTimestamp()
+          },
+          { merge: true }
+        );
 
-  console.log("Firestore 寫入完成");
-  console.log("users document created");
-} catch (firestoreError) {
-  console.error("Firestore write failed:", firestoreError);
-}
-
-
-      console.log("users document created");
+        console.log("Firestore 寫入完成");
+        console.log("users document created");
+      } catch (firestoreError) {
+        console.error("Firestore write failed:", firestoreError);
+      }
     })
     .catch((error) => {
       console.error("Firebase login failed:", error);
     });
+
 </script>
 
 <meta charset="UTF-8" />
