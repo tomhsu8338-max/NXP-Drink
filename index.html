@@ -385,33 +385,41 @@ function App() {
   }
 
 async function saveRound() {
-  alert("有按到儲存");
-
   var round = activeRound;
 
   try {
     await setDoc(
       doc(db, "rounds", round.id),
-      {
-        type: round.type,
-        isoDate: round.isoDate,
-        shopName: round.shopName || "",
+      Object.assign({}, round, {
         ownerUid: auth.currentUser.uid
-      }
+      })
     );
 
-    alert("已寫入 Firestore");
+    console.log("飲料單 Firestore 寫入完成");
 
-    setRounds(function (rs) {
-      return [round].concat(rs);
-    });
+    if (isEditing) {
+      setRounds(function (rs) {
+        return rs.map(function (x) {
+          return x.id === round.id ? round : x;
+        });
+      });
+      showToast("已更新");
+      setView("roundDetail");
+    } else {
+      setRounds(function (rs) {
+        return [round].concat(rs);
+      });
+      showToast("已儲存");
+      setView("home");
+    }
 
-    setView("home");
+    setIsEditing(false);
   } catch (error) {
-    alert("失敗：" + error.code);
-    console.error(error);
+    console.error("飲料單 Firestore 寫入失敗:", error);
+    alert("儲存失敗：" + error.code);
   }
 }
+
 
 
 
