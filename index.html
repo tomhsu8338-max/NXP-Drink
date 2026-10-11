@@ -386,17 +386,28 @@ function App() {
 
   async function saveRound() {
   var round = activeRound;
+  var user = auth.currentUser;
+
+  if (!user) {
+    showToast("尚未登入");
+    return;
+  }
 
   try {
+    var data = Object.assign({}, round, {
+      ownerUid: user.uid,
+      updatedAt: serverTimestamp()
+    });
+
+    console.log("開始寫入飲料單", data);
+
     await setDoc(
       doc(db, "rounds", round.id),
-      {
-        ...round,
-        ownerUid: auth.currentUser.uid,
-        updatedAt: serverTimestamp()
-      },
+      data,
       { merge: true }
     );
+
+    console.log("飲料單 Firestore 寫入完成");
 
     if (isEditing) {
       setRounds(function (rs) {
@@ -414,11 +425,10 @@ function App() {
       setView("home");
     }
 
-    console.log("飲料單已寫入 Firestore");
     setIsEditing(false);
   } catch (error) {
-    console.error("飲料單寫入失敗:", error);
-    showToast("儲存失敗");
+    console.error("飲料單 Firestore 寫入失敗:", error.code, error.message);
+    showToast("儲存失敗：" + (error.code || "未知錯誤"));
   }
 }
 
