@@ -384,21 +384,44 @@ function App() {
     });
   }
 
-  function saveRound() {
-    var round = activeRound;
+  async function saveRound() {
+  var round = activeRound;
+
+  try {
+    await setDoc(
+      doc(db, "rounds", round.id),
+      {
+        ...round,
+        ownerUid: auth.currentUser.uid,
+        updatedAt: serverTimestamp()
+      },
+      { merge: true }
+    );
+
     if (isEditing) {
       setRounds(function (rs) {
-        return rs.map(function (x) { return x.id === round.id ? round : x; });
+        return rs.map(function (x) {
+          return x.id === round.id ? round : x;
+        });
       });
       showToast("已更新");
       setView("roundDetail");
     } else {
-      setRounds(function (rs) { return [round].concat(rs); });
+      setRounds(function (rs) {
+        return [round].concat(rs);
+      });
       showToast("已儲存");
       setView("home");
     }
+
+    console.log("飲料單已寫入 Firestore");
     setIsEditing(false);
+  } catch (error) {
+    console.error("飲料單寫入失敗:", error);
+    showToast("儲存失敗");
   }
+}
+
 
   function cycleRoundPayment(pid) {
     setActiveRound(function (r) {
