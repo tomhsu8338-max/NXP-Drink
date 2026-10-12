@@ -436,6 +436,37 @@ async function saveRound() {
       return updated;
     });
   }
+function requestPaymentApproval(personId, roundId) {
+  setRounds(function(rs) {
+    return rs.map(function(r) {
+      if (r.id !== roundId) return r;
+
+      var current = r.payments && r.payments[personId];
+
+      if (current !== "unpaid") return r;
+
+      var payments = Object.assign({}, r.payments);
+      payments[personId] = "payment_pending";
+
+      return Object.assign({}, r, {
+        payments: payments
+      });
+    });
+  });
+
+  setActiveRound(function(r) {
+    if (!r || r.id !== roundId) return r;
+
+    var payments = Object.assign({}, r.payments);
+    payments[personId] = "payment_pending";
+
+    return Object.assign({}, r, {
+      payments: payments
+    });
+  });
+
+  showToast("已送出付款通知");
+}
 
   function deleteRound(id) {
     setRounds(function (rs) { return rs.filter(function (r) { return r.id !== id; }); });
