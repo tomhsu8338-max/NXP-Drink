@@ -802,6 +802,23 @@ function requestPaymentApproval(personId, roundId) {
         )
       )
     ) : null,
+status === "unpaid"
+  ? React.createElement("button", {
+      onClick: function(e) {
+        e.stopPropagation();
+        requestPaymentApproval(p.id, activeRound.id);
+      },
+      style: {
+        marginLeft: "8px",
+        background: "transparent",
+        border: "1px solid rgba(196,154,85,0.4)",
+        color: "#c49a55",
+        borderRadius: "7px",
+        padding: "5px 9px",
+        fontSize: "11px"
+      }
+    }, "我已付款")
+  : null
 
     view === "manage" ? React.createElement(React.Fragment, null,
       React.createElement("div", { className: "header" },
