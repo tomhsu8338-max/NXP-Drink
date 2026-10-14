@@ -1,76 +1,6 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
-  import {
-    getAuth,
-    signInAnonymously
-  } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
-  import {
-    getFirestore,
-    doc,
-    setDoc,
-    collection,
-    query,
-    where,
-    onSnapshot,
-    serverTimestamp
-  } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
-
-  const firebaseConfig = {
-    apiKey: "AIzaSyCcrwA_CJCsxO5tzZ5eMvuwYPDoA8ePU0Q",
-    authDomain: "nxp-drink.firebaseapp.com",
-    projectId: "nxp-drink",
-    storageBucket: "nxp-drink.firebasestorage.app",
-    messagingSenderId: "811769663669",
-    appId: "1:811769663669:web:b8007e0d709e3dfb212efc"
-  };
-
-  const app = initializeApp(firebaseConfig);
-  window.firebaseAuth = getAuth(app);
-  const db = getFirestore(app);
-  window.firebaseDb = db;
-  window.firebaseDoc = doc;
-  window.firebaseSetDoc = setDoc;
-  window.firebaseCollection = collection;
-  window.firebaseQuery = query;
-  window.firebaseWhere = where;
-  window.firebaseOnSnapshot = onSnapshot;
-
-  signInAnonymously(window.firebaseAuth)
-    .then(async (result) => {
-      const user = result.user;
-
-console.log("Firebase anonymous login OK");
-
-console.log("開始寫入 Firestore");
-
-try {
-  await setDoc(
-    doc(db, "users", user.uid),
-    {
-      role: "member",
-      deviceStatus: "new",
-      updatedAt: serverTimestamp()
-    },
-    { merge: true }
-  );
-
-  console.log("Firestore 寫入完成");
-  console.log("users document created");
-} catch (firestoreError) {
-  console.error("Firestore write failed:", firestoreError);
-}
-
-
-      console.log("users document created");
-    })
-    .catch((error) => {
-      console.error("Firebase login failed:", error);
-    });
-</script>
-
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
 <title>NXP 中班吃吃喝喝</title>
@@ -133,18 +63,11 @@ function randomId() {
   return Math.random().toString(36).slice(2, 9);
 }
 
-const ADMIN_UID = "4JDBMP5iabO6CkX7bnWkSLbnkan2";
-function isAdmin() {
-  return !!(window.firebaseAuth && window.firebaseAuth.currentUser &&
-            window.firebaseAuth.currentUser.uid === ADMIN_UID);
-}
-
-var STATUS_CYCLE = { unpaid: "pending", pending: "paid", paid: "unpaid" };
+var STATUS_CYCLE = { skip: "unpaid", unpaid: "paid", paid: "skip" };
 
 var STATUS = {
   paid:   { label: "已付", color: "#6b8f71", bg: "rgba(107,143,113,0.12)", border: "rgba(107,143,113,0.35)" },
   unpaid: { label: "未付", color: "#a07850", bg: "rgba(160,120,80,0.12)", border: "rgba(160,120,80,0.35)" },
-  pending: { label: "待確認", color: "#b0833f", bg: "rgba(176,131,63,0.12)", border: "rgba(176,131,63,0.35)" },
   skip:   { label: "不點", color: "#5a5a72", bg: "rgba(90,90,114,0.12)", border: "rgba(90,90,114,0.35)" },
   absent: { label: "休假", color: "#3a3a44", bg: "rgba(58,58,68,0.12)", border: "rgba(58,58,68,0.4)" }
 };
@@ -243,37 +166,6 @@ function App() {
   }, [rounds]);
 
   React.useEffect(function () {
-    var user = window.firebaseAuth && window.firebaseAuth.currentUser;
-
-    if (!user) {
-      return;
-    }
-
-    var q = window.firebaseQuery(
-      window.firebaseCollection(window.firebaseDb, "rounds"),
-      window.firebaseWhere("ownerUid", "==", user.uid)
-    );
-
-    var unsubscribe = window.firebaseOnSnapshot(
-      q,
-      function (snapshot) {
-        var cloudRounds = [];
-
-        snapshot.forEach(function (docSnap) {
-          cloudRounds.push(docSnap.data());
-        });
-
-        setRounds(cloudRounds);
-      },
-      function (error) {
-        console.error("讀取 Firestore 飲料單失敗", error);
-      }
-    );
-
-    return unsubscribe;
-  }, []);
-
-  React.useEffect(function () {
     if (view === "home") return;
     var touchStartX = 0;
     var touchStartY = 0;
@@ -366,7 +258,7 @@ function App() {
     var payments = Object.assign({}, round.payments);
     people.forEach(function (p) {
       if (!orders[p.id]) orders[p.id] = { item: "", amount: "" };
-      if (!payments[p.id]) payments[p.id] = "absent";
+      if (!payments[p.id]) payments[p.id] = "skip";
     });
     var isoDate = round.isoDate;
     if (!isoDate && round.date) {
@@ -421,88 +313,41 @@ function App() {
       var cur = r.payments[pid];
       if (cur === "absent") return r;
       var payments = Object.assign({}, r.payments);
-      var orderCycle = { skip: "unpaid", unpaid: "pending", pending: "pending", paid: "paid" };
-      payments[pid] = orderCycle[cur] || "unpaid";
+      payments[pid] = STATUS_CYCLE[cur || "skip"] || "unpaid";
       return Object.assign({}, r, { payments: payments });
     });
   }
 
   function toggleAbsent(pid) {
-    setActiveRound(function (r) {
-      var cur = r.payments[pid];
-      var payments = Object.assign({}, r.payments);
-      payments[pid] = cur === "absent" ? "unpaid" : "absent";
-      return Object.assign({}, r, { payments: payments });
-    });
+    return;
   }
 
   function saveRound() {
     var round = activeRound;
-
-    if (!window.firebaseAuth.currentUser) {
-      alert("尚未登入");
-      return;
+    if (isEditing) {
+      setRounds(function (rs) {
+        return rs.map(function (x) { return x.id === round.id ? round : x; });
+      });
+      showToast("已更新");
+      setView("roundDetail");
+    } else {
+      setRounds(function (rs) { return [round].concat(rs); });
+      showToast("已儲存");
+      setView("home");
     }
-
-    window.firebaseSetDoc(
-      window.firebaseDoc(window.firebaseDb, "rounds", round.id),
-      Object.assign({}, round, {
-        ownerUid: window.firebaseAuth.currentUser.uid
-      })
-    ).then(function () {
-      alert("飲料單已寫入 Firestore");
-
-      if (isEditing) {
-        setRounds(function (rs) {
-          return rs.map(function (x) {
-            return x.id === round.id ? round : x;
-          });
-        });
-        showToast("已更新");
-        setView("roundDetail");
-      } else {
-        setRounds(function (rs) {
-          return [round].concat(rs);
-        });
-        showToast("已儲存");
-        setView("home");
-      }
-
-      setIsEditing(false);
-    }).catch(function (error) {
-      alert("飲料單儲存失敗：" + error.code);
-      console.error("飲料單儲存失敗", error);
-    });
+    setIsEditing(false);
   }
 
   function cycleRoundPayment(pid) {
     setActiveRound(function (r) {
       var cur = r.payments[pid];
-
-      if (cur === "absent" || cur === "skip" || cur === "paid") {
-        return r;
-      }
-
-      var next = cur === "unpaid"
-        ? "pending"
-        : (cur === "pending" && isAdmin() ? "paid" : cur);
-
-      if (next === cur) {
-        showToast("待管理者確認");
-        return r;
-      }
-
+      if (cur === "absent") return r;
       var payments = Object.assign({}, r.payments);
-      payments[pid] = next;
-
+      payments[pid] = STATUS_CYCLE[cur || "skip"] || "unpaid";
       var updated = Object.assign({}, r, { payments: payments });
-
       setRounds(function (rs) {
-        return rs.map(function (x) {
-          return x.id === updated.id ? updated : x;
-        });
+        return rs.map(function (x) { return x.id === updated.id ? updated : x; });
       });
-
       return updated;
     });
   }
@@ -554,7 +399,7 @@ function App() {
   function addPerson() {
     if (!newName.trim()) return;
     setPeople(function (ps) {
-      return ps.concat([{ id: Date.now(), name: newName.trim(), workDays: newWorkDays }]);
+      return ps.concat([{ id: Date.now(), name: newName.trim(), workDays: [] }]);
     });
     setNewName("");
     setNewWorkDays([0,1,2,3,4]);
@@ -745,20 +590,17 @@ function App() {
           ),
           React.createElement("div", { style: { fontSize: 11, color: "var(--text3)", letterSpacing: "0.05em", marginBottom: 10 } }, "點狀態循環切換：未付 \u2192 已付 \u2192 不點"),
           people.map(function (p) {
-            var status = activeRound.payments[p.id] || "absent";
+            var status = activeRound.payments[p.id] || "skip";
             var order = (activeRound.orders && activeRound.orders[p.id]) || { item: "", amount: "" };
-            var st = STATUS[status];
+            var st = STATUS[status] || STATUS.unpaid || { label: "未付", color: "#888", bg: "transparent", border: "#888" } || STATUS.unpaid || { label: "未付", color: "#888", bg: "transparent", border: "#888" };
             return React.createElement("div", { key: p.id, className: "card", style: { padding: "14px 16px", marginBottom: 8 } },
               React.createElement("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: (status === "absent" || status === "skip") ? 0 : 10 } },
                 React.createElement("div", null,
                   React.createElement("div", { style: { fontWeight: 400, fontSize: 15, color: "var(--text)" } }, p.name),
-                  React.createElement("div", { style: { fontSize: 11, color: "var(--text3)", marginTop: 2 } }, p.workDays.map(function (d) { return DAYS[d]; }).join(" · "))
+                  null
                 ),
                 React.createElement("div", { style: { display: "flex", gap: 6 } },
-                  React.createElement("button", {
-                    onClick: function () { toggleAbsent(p.id); },
-                    style: { background: status === "absent" ? "rgba(58,58,68,0.3)" : "transparent", border: "1px solid " + (status === "absent" ? "rgba(58,58,68,0.8)" : "var(--border)"), borderRadius: 7, padding: "5px 11px", fontSize: 12, color: status === "absent" ? "#5a5a6e" : "var(--text3)" }
-                  }, "休假"),
+                  null,
                   React.createElement("button", {
                     onClick: function () { cycleStatus(p.id); },
                     style: { width: 72, height: 32, borderRadius: 7, background: st.bg, border: "1px solid " + st.border, color: st.color, fontSize: 12, opacity: status === "absent" ? 0.3 : 1 }
@@ -817,9 +659,9 @@ function App() {
           }) : null,
           React.createElement("div", { style: { fontSize: 11, color: "var(--text3)", letterSpacing: "0.05em", marginBottom: 10 } }, "點一下循環切換狀態"),
           people.map(function (p) {
-            var status = activeRound.payments[p.id] || "absent";
+            var status = activeRound.payments[p.id] || "skip";
             var order = activeRound.orders && activeRound.orders[p.id];
-            var st = STATUS[status];
+            var st = STATUS[status] || STATUS.unpaid || { label: "未付", color: "#888", bg: "transparent", border: "#888" };
             return React.createElement("div", {
               key: p.id, className: "card",
               onClick: function () { cycleRoundPayment(p.id); },
@@ -861,7 +703,7 @@ function App() {
               React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center" } },
                 React.createElement("div", null,
                   React.createElement("div", { style: { fontWeight: 400, fontSize: 15, color: "var(--text)" } }, p.name),
-                  React.createElement("div", { style: { fontSize: 11, color: "var(--text3)", marginTop: 3 } }, p.workDays.map(function (d) { return "週" + DAYS[d]; }).join("\u3000"))
+                  null
                 ),
                 React.createElement("div", { style: { color: "var(--text3)", fontSize: 16 } }, "\u203a")
               )
@@ -893,9 +735,9 @@ function App() {
           onChange: function (e) { setEditPerson(Object.assign({}, editPerson, { name: e.target.value })); },
           className: "inp", style: { marginBottom: 16 }, placeholder: "姓名"
         }),
-        React.createElement("div", { className: "label" }, "上班日"),
+        null,
         React.createElement("div", { style: { display: "flex", gap: 8, marginBottom: 24 } },
-          DAYS.map(function (d, i) {
+          [].map(function (d, i) {
             var a = editPerson.workDays.indexOf(i) !== -1;
             return React.createElement("div", {
               key: i, className: "day-chip",
@@ -936,9 +778,9 @@ function App() {
           onChange: function (e) { setNewName(e.target.value); },
           className: "inp", style: { marginBottom: 16 }, placeholder: "姓名"
         }),
-        React.createElement("div", { className: "label" }, "上班日"),
+        null,
         React.createElement("div", { style: { display: "flex", gap: 8, marginBottom: 24 } },
-          DAYS.map(function (d, i) {
+          [].map(function (d, i) {
             var a = newWorkDays.indexOf(i) !== -1;
             return React.createElement("div", {
               key: i, className: "day-chip",
